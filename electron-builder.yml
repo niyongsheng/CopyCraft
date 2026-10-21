@@ -1,0 +1,57 @@
+appId: com.copycraft.app
+productName: Copycraft 字帖工坊
+copyright: Copyright © 2026 Copycraft
+artifactName: Copycraft-${version}-${os}-${arch}.${ext}
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - dist/**/*
+  - electron/**/*
+  - build/icon.png
+  - package.json
+
+asar: true
+npmRebuild: false
+
+mac:
+  category: public.app-category.education
+  icon: build/icon.icns
+  identity: null
+  hardenedRuntime: false
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+    - target: zip
+      arch:
+        - arm64
+        - x64
+
+dmg:
+  title: Copycraft 字帖工坊
+
+win:
+  icon: build/icon.ico
+  executableName: Copycraft
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  shortcutName: Copycraft 字帖工坊
+  artifactName: Copycraft-Setup-${version}-${arch}.${ext}
+
+portable:
+  artifactName: Copycraft-Portable-${version}-${arch}.${ext}
