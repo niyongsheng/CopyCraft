@@ -14,12 +14,8 @@ concurrency:
 
 jobs:
   web:
-    name: Web (Pages)
+    name: Web (static)
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,22 +29,30 @@ jobs:
           name: web-dist
           path: dist
           if-no-files-found: error
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
 
   pages:
     name: Deploy Pages
     needs: web
+    # Pages is unavailable while the repository is private on the current plan;
+    # keep the release assets independent from that deployment.
+    continue-on-error: true
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pages: write
       id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: dist
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
       - id: deployment
         uses: actions/deploy-pages@v4
 
