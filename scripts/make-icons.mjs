@@ -17,7 +17,8 @@ await fs.access(source);
 await fs.rm(tmpDir, { recursive: true, force: true });
 await fs.mkdir(tmpDir, { recursive: true });
 
-const sizes = [16, 32, 48, 64, 128, 256, 512];
+// ICO entries are capped at 256×256; larger sizes must not be embedded.
+const sizes = [16, 32, 48, 64, 128, 256];
 const pngs = [];
 for (const size of sizes) {
   const out = path.join(tmpDir, `${size}.png`);
