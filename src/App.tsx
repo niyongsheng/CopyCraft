@@ -1,11 +1,13 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Inspector } from './components/Inspector';
 import { SettingsDialog } from './components/SettingsDialog';
 import { Sidebar } from './components/Sidebar';
 import { Stage } from './components/Stage';
 import { TitleBar } from './components/TitleBar';
+import { initAnalytics, track } from './lib/analytics';
 import { isNarrowViewport } from './lib/viewport';
 import { useApp } from './store/useApp';
+import { useLicense } from './store/useLicense';
 
 const THEME_COLOR: Record<string, string> = {
   light: '#f4f6fa',
@@ -19,6 +21,44 @@ export default function App() {
   const setInspector = useApp((s) => s.setInspector);
   const theme = useApp((s) => s.theme);
   const settingsOpen = useApp((s) => s.settingsOpen);
+  const activeType = useApp((s) => s.activeType);
+  const activeTool = useApp((s) => s.activeTool);
+
+  useEffect(() => {
+    void initAnalytics();
+  }, []);
+
+  // 跳过首次渲染，只统计用户主动切换字帖类型的行为。
+  const firstSheet = useRef(true);
+  useEffect(() => {
+    if (firstSheet.current) {
+      firstSheet.current = false;
+      return;
+    }
+    track('sheet_selected', { sheet: activeType });
+  }, [activeType]);
+
+  useEffect(() => {
+    if (activeTool) track('tool_opened', { tool: activeTool });
+  }, [activeTool]);
+
+  useEffect(() => {
+    if (settingsOpen) track('settings_opened');
+  }, [settingsOpen]);
+
+  useEffect(() => {
+    void useLicense.getState().refresh();
+    const desktop = window.desktop;
+    if (!desktop?.isElectron) return;
+    const offOpen = desktop.onOpenSettings(() => useApp.getState().setSettingsOpen(true));
+    const offChanged = desktop.onLicenseChanged(() => {
+      void useLicense.getState().refresh();
+    });
+    return () => {
+      offOpen();
+      offChanged();
+    };
+  }, []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;

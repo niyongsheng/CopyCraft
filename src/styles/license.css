@@ -1,0 +1,194 @@
+/* Copycraft — 激活 / 试用（设置弹窗内的离线授权分区）。 */
+
+.license-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card-bg);
+}
+
+.license-status > svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--text-3);
+}
+
+.license-status-text {
+  min-width: 0;
+}
+
+.license-status-text strong {
+  display: block;
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.license-status-text span {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.55;
+}
+
+.license-status.is-active {
+  border-color: rgba(40, 200, 64, 0.3);
+  background: rgba(40, 200, 64, 0.07);
+}
+
+.license-status.is-active > svg,
+.license-status.is-active strong {
+  color: var(--accent, var(--green));
+}
+
+.license-status.is-trial {
+  border-color: rgba(254, 188, 46, 0.3);
+  background: rgba(254, 188, 46, 0.07);
+}
+
+.license-status.is-trial > svg,
+.license-status.is-trial strong {
+  color: var(--yellow);
+}
+
+.license-status.is-blocked,
+.license-status.is-error {
+  border-color: rgba(255, 95, 87, 0.32);
+  background: rgba(255, 95, 87, 0.08);
+}
+
+.license-status.is-blocked > svg,
+.license-status.is-blocked strong,
+.license-status.is-error > svg,
+.license-status.is-error strong {
+  color: var(--red);
+}
+
+.license-fp {
+  margin-top: 12px;
+}
+
+.license-fp-label {
+  display: block;
+  color: var(--text-3);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.license-fp-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.license-fp-code {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--field-bg);
+  color: var(--text-2);
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.35;
+  letter-spacing: 0.08em;
+  word-break: break-all;
+}
+
+.license-fp-row .btn {
+  flex: none;
+  height: auto;
+  padding: 0 12px;
+}
+
+.license-hint {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.6;
+}
+
+.license-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.license-input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--field-bg);
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.license-input::placeholder {
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.license-input:focus {
+  border-color: var(--blue);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--blue-soft);
+}
+
+.license-input:disabled {
+  opacity: 0.55;
+}
+
+.license-form .btn {
+  flex: none;
+  height: 32px;
+  padding: 0 14px;
+}
+
+.license-note {
+  margin: 8px 0 0;
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+
+.license-note.is-ok {
+  color: var(--accent, var(--green));
+}
+
+.license-note.is-error {
+  color: #ff9b95;
+}
+
+/* ── Light theme ────────────────────────────────────────────── */
+
+[data-theme='light'] .license-status.is-active > svg,
+[data-theme='light'] .license-status.is-active strong,
+[data-theme='light'] .license-note.is-ok {
+  color: #0f7a38;
+}
+
+[data-theme='light'] .license-status.is-trial > svg,
+[data-theme='light'] .license-status.is-trial strong {
+  color: #9a6400;
+}
+
+[data-theme='light'] .license-status.is-blocked > svg,
+[data-theme='light'] .license-status.is-blocked strong,
+[data-theme='light'] .license-status.is-error > svg,
+[data-theme='light'] .license-status.is-error strong,
+[data-theme='light'] .license-note.is-error {
+  color: #c0362f;
+}

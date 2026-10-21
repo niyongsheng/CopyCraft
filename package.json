@@ -1,7 +1,7 @@
 {
   "name": "copycraft",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "main": "electron/main.cjs",
   "description": "Copycraft 字帖工坊 — 支持 Web、macOS 与 Windows 的字帖生成器",
@@ -26,9 +26,13 @@
     "dist:mac": "npm run build:web && electron-builder --mac",
     "dist:win": "npm run build:web && electron-builder --win",
     "icons": "node scripts/make-icons.mjs",
-    "dist:win:zip": "npm run build:web && electron-builder --win zip --x64"
+    "dist:win:zip": "npm run build:web && electron-builder --win zip --x64",
+    "license:gen": "node scripts/gen-license.cjs",
+    "license:fp": "node scripts/gen-license.cjs --local",
+    "test:license": "node --test tests/license.test.cjs"
   },
   "dependencies": {
+    "@aptabase/electron": "^0.3.1",
     "docx": "^9.13.0",
     "hanzi-writer": "^3.7.0",
     "html2canvas": "^1.4.1",

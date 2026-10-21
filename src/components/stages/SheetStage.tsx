@@ -13,8 +13,14 @@ import {
 } from 'lucide-react';
 import { useSheetModel } from '../../hooks/useSheetModel';
 import { PAGE_WIDTH, SHEET_BY_ID, isGeneratedSheet } from '../../lib/constants';
+import { track } from '../../lib/analytics';
 import { downloadBlob, exportFileName } from '../../lib/download';
 import { useApp } from '../../store/useApp';
+import {
+  selectTrialBlocked,
+  selectTrialRemainingCount,
+  useLicense,
+} from '../../store/useLicense';
 import { ClockSheet } from '../sheets/ClockSheet';
 import { FourLineSheet } from '../sheets/FourLineSheet';
 import { GridSheet } from '../sheets/GridSheet';
@@ -33,6 +39,12 @@ export function SheetStage() {
   const showInspector = useApp((s) => s.showInspector);
   const toggleInspector = useApp((s) => s.toggleInspector);
   const { model, stroke } = useSheetModel();
+
+  const desktopLicense = Boolean(window.desktop?.isElectron);
+  const licenseStatus = useLicense((s) => s.status);
+  const trialBlocked = useLicense(selectTrialBlocked);
+  const remainingCount = useLicense(selectTrialRemainingCount);
+  const refreshLicense = useLicense((s) => s.refresh);
 
   const workspaceRef = useRef<HTMLDivElement>(null);
   const [fitZoom, setFitZoom] = useState(0.9);
@@ -72,8 +84,33 @@ export function SheetStage() {
     setUserZoom(Math.max(0.35, Math.min(1.6, zoom + delta)));
   };
 
+  /** 导出前向主进程确认试用 / 激活状态；受限时直接打开设置引导激活。 */
+  const ensureCanExport = async (format: 'pdf' | 'docx'): Promise<boolean> => {
+    const desktop = window.desktop;
+    if (!desktop?.isElectron) return true;
+    try {
+      const result = await desktop.licenseCheck();
+      if (result.status) useLicense.setState({ status: result.status });
+      if (result.allowed) return true;
+      track('export', {
+        format,
+        result: 'blocked',
+        reason: result.reason ?? 'unknown',
+      });
+      setToast(result.error ?? '免费试用已结束，请激活后继续导出');
+    } catch (error) {
+      track('export', { format, result: 'failed', stage: 'license_check' });
+      setToast(
+        `无法读取激活状态：${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    useApp.getState().setSettingsOpen(true);
+    return false;
+  };
+
   const exportPdf = async () => {
     if (exportKind) return;
+    if (!(await ensureCanExport('pdf'))) return;
     setExportMenu(false);
     setExportKind('pdf');
     const desktop = window.desktop;
@@ -81,10 +118,15 @@ export function SheetStage() {
       if (desktop?.isElectron) {
         setToast('正在生成 PDF…');
         const result = await desktop.exportPdf();
-        if (result.canceled) {
+        if (result.needActivation) {
+          setToast(result.error ?? '免费试用已结束，请激活后继续导出');
+          useApp.getState().setSettingsOpen(true);
+          void refreshLicense();
+        } else if (result.canceled) {
           setToast('');
         } else if (result.saved) {
           setToast('PDF 导出成功');
+          void refreshLicense();
         } else {
           setToast(`导出失败：${result.error ?? '未知错误'}`);
         }
@@ -101,6 +143,7 @@ export function SheetStage() {
 
   const exportDocx = async () => {
     if (exportKind) return;
+    if (!(await ensureCanExport('docx'))) return;
     setExportMenu(false);
     setExportKind('docx');
     setToast('正在生成 Word 文档…');
@@ -115,10 +158,18 @@ export function SheetStage() {
           defaultName: fileName,
           filters: [{ name: 'Word 文档', extensions: ['docx'] }],
           data,
+          kind: 'docx',
+          pages,
         });
-        if (result.canceled) setToast('');
-        else if (result.saved) setToast(`Word 文档导出成功（${pages} 页）`);
-        else setToast(`导出失败：${result.error ?? '未知错误'}`);
+        if (result.needActivation) {
+          setToast(result.error ?? '免费试用已结束，请激活后继续导出');
+          useApp.getState().setSettingsOpen(true);
+          void refreshLicense();
+        } else if (result.canceled) setToast('');
+        else if (result.saved) {
+          setToast(`Word 文档导出成功（${pages} 页）`);
+          void refreshLicense();
+        } else setToast(`导出失败：${result.error ?? '未知错误'}`);
       } else {
         downloadBlob(blob, fileName);
         setToast(`Word 文档已下载（${pages} 页）`);
@@ -181,6 +232,14 @@ export function SheetStage() {
           <div className="stage-chips">
             <span className="meta-chip">A4</span>
             <span className="meta-chip">{pageCount} 页</span>
+            {desktopLicense && licenseStatus && !licenseStatus.activated && (
+              <span
+                className={`meta-chip ${trialBlocked ? 'is-warn' : ''}`}
+                title="免费试用额度：成功导出一次消耗一次"
+              >
+                {trialBlocked ? '试用已结束' : `试用剩余 ${remainingCount} 次`}
+              </span>
+            )}
             {meta.id === 'name' && settings.nameStrokeOrder && (
               stroke.loading ? (
                 <span className="meta-chip is-warn">
@@ -240,6 +299,7 @@ export function SheetStage() {
               className="btn btn-primary export-main"
               onClick={() => void exportPdf()}
               disabled={exportKind !== null}
+              title={trialBlocked ? '免费试用已结束，点击激活' : '导出 PDF'}
             >
               {exportKind !== null ? (
                 <Loader2 size={14} className="spin" />

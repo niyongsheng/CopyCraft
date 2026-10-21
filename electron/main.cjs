@@ -14,6 +14,8 @@ const {
 const path = require('node:path');
 const fs = require('node:fs');
 const fsp = require('node:fs/promises');
+const { createLicense } = require('./license.cjs');
+const { createAnalytics } = require('./analytics.cjs');
 
 const isMac = process.platform === 'darwin';
 const isWin = process.platform === 'win32';
@@ -24,8 +26,66 @@ const ICON = path.join(ROOT, 'build', 'icon.png');
 app.setName('Copycraft 字帖工坊');
 if (isWin) app.setAppUserModelId('com.copycraft.app');
 
+// Aptabase 要求 initialize 在 app ready 之前调用；此处只注册，不会自动上报事件。
+let analytics = null;
+try {
+  analytics = createAnalytics({ userDataDir: app.getPath('userData') });
+  analytics.init();
+} catch (error) {
+  console.error('[copycraft] failed to create analytics:', error);
+}
+
 let mainWindow = null;
 let exportInProgress = false;
+let licenseManager = null;
+
+const TRIAL_BLOCKED_MESSAGE = '免费试用已结束，请激活后继续导出';
+
+function errorMessage(error) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function notifyLicenseChanged(win) {
+  if (win && !win.isDestroyed()) win.webContents.send('license-changed');
+}
+
+/** 导出前门禁：返回 null 表示放行，否则返回可直接回传前端的失败结果。 */
+function exportGate(format) {
+  if (!licenseManager) {
+    analytics?.track('export', { format, result: 'blocked', reason: 'license_unavailable' });
+    return { saved: false, error: '激活模块未初始化，请重启应用后重试' };
+  }
+  try {
+    const gate = licenseManager.checkExport();
+    if (gate.allowed) return null;
+    analytics?.track('export', {
+      format,
+      result: 'blocked',
+      reason: gate.reason ?? 'unknown',
+    });
+    return {
+      saved: false,
+      needActivation: true,
+      error: TRIAL_BLOCKED_MESSAGE,
+    };
+  } catch (error) {
+    analytics?.track('export', { format, result: 'failed', stage: 'license' });
+    return {
+      saved: false,
+      error: `激活状态读取失败：${errorMessage(error)}`,
+    };
+  }
+}
+
+/** 导出成功后计数（失败只记日志，不影响已完成导出的结果）。 */
+function recordExport(win) {
+  try {
+    licenseManager?.recordExport();
+    notifyLicenseChanged(win);
+  } catch (error) {
+    console.error('[copycraft] failed to record export usage:', error);
+  }
+}
 
 const UPDATE_REPO = 'niyongsheng/Copycraft';
 const RELEASES_URL = `https://github.com/${UPDATE_REPO}/releases`;
@@ -217,13 +277,19 @@ async function exportPdf(win) {
       return { saved: false, error: '当前视图没有可导出的字帖，请先选择一个字帖类型' };
     }
 
+    const blocked = exportGate('pdf');
+    if (blocked) return blocked;
+
     const { canceled, filePath } = await dialog.showSaveDialog(win, {
       title: '导出字帖 PDF',
       defaultPath: path.join(app.getPath('downloads'), `Copycraft-${timestamp()}.pdf`),
       filters: [{ name: 'PDF 文件', extensions: ['pdf'] }],
       properties: ['createDirectory', 'showOverwriteConfirmation'],
     });
-    if (canceled || !filePath) return { canceled: true, saved: false };
+    if (canceled || !filePath) {
+      analytics?.track('export', { format: 'pdf', result: 'canceled' });
+      return { canceled: true, saved: false };
+    }
 
     const pdf = await win.webContents.printToPDF({
       printBackground: true,
@@ -233,8 +299,11 @@ async function exportPdf(win) {
       landscape: false,
     });
     await fsp.writeFile(filePath, pdf);
+    recordExport(win);
+    analytics?.track('export', { format: 'pdf', result: 'saved' });
     return { saved: true, path: filePath };
   } catch (error) {
+    analytics?.track('export', { format: 'pdf', result: 'failed', stage: 'export' });
     return {
       saved: false,
       error: error instanceof Error ? error.message : String(error),
@@ -256,7 +325,20 @@ function buildMenu() {
           click: async () => {
             if (!mainWindow) return;
             const result = await exportPdf(mainWindow);
-            if (!result.saved && !result.canceled) {
+            if (result.needActivation) {
+              const choice = await dialog.showMessageBox(mainWindow, {
+                type: 'warning',
+                title: '需要激活',
+                message: '免费试用已结束',
+                detail: '激活后可无限次导出字帖。是否打开设置进行激活？',
+                buttons: ['打开设置', '取消'],
+                defaultId: 0,
+                cancelId: 1,
+              });
+              if (choice.response === 0) {
+                mainWindow.webContents.send('open-settings');
+              }
+            } else if (!result.saved && !result.canceled) {
               dialog.showErrorBox('导出失败', result.error || '未知错误');
             }
           },
@@ -285,6 +367,15 @@ function buildMenu() {
       label: '帮助',
       submenu: [
         {
+          label: '激活 Copycraft…',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('open-settings');
+            }
+          },
+        },
+        { type: 'separator' },
+        {
           label: '关于 Copycraft 字帖工坊',
           click: () => {
             void dialog.showMessageBox({
@@ -307,14 +398,71 @@ ipcMain.handle('export-pdf', (event) => {
   return exportPdf(win);
 });
 
+ipcMain.handle('license-status', () => {
+  if (!licenseManager) {
+    return { ok: false, status: null, error: '激活模块未初始化' };
+  }
+  try {
+    return { ok: true, status: licenseManager.status() };
+  } catch (error) {
+    return { ok: false, status: null, error: errorMessage(error) };
+  }
+});
+
+ipcMain.handle('license-check', () => {
+  if (!licenseManager) {
+    return { allowed: false, status: null, error: '激活模块未初始化' };
+  }
+  try {
+    return licenseManager.checkExport();
+  } catch (error) {
+    return {
+      allowed: false,
+      status: null,
+      error: `激活状态读取失败：${errorMessage(error)}`,
+    };
+  }
+});
+
+ipcMain.handle('license-activate', (_event, code) => {
+  if (!licenseManager) {
+    return { ok: false, error: '激活模块未初始化' };
+  }
+  const result = licenseManager.activate(code);
+  analytics?.track('activation', {
+    result: result.ok ? 'success' : 'failed',
+    reason: result.ok ? 'none' : result.code ?? 'unknown',
+  });
+  return result;
+});
+
+ipcMain.handle('analytics-get', () => {
+  return analytics?.getState() ?? { enabled: false, active: false };
+});
+
+ipcMain.handle('analytics-set', (_event, enabled) => {
+  return analytics?.setEnabled(Boolean(enabled)) ?? { enabled: false, active: false };
+});
+
 ipcMain.handle('save-file', async (event, payload) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   if (!win || win.isDestroyed()) return { saved: false, error: '窗口不可用' };
 
-  const { defaultName, filters, data } = payload || {};
+  const { defaultName, filters, data, kind, pages } = payload || {};
   if (!data || typeof data !== 'object') {
     return { saved: false, error: '无效的文件数据' };
   }
+
+  const format = kind === 'docx' ? 'docx' : 'file';
+  const trackExportResult = (result) =>
+    analytics?.track('export', {
+      format,
+      result,
+      ...(Number.isFinite(pages) ? { pages } : {}),
+    });
+
+  const blocked = exportGate(format);
+  if (blocked) return blocked;
 
   const safeName = path.basename(String(defaultName || 'Copycraft-export'));
   const { canceled, filePath } = await dialog.showSaveDialog(win, {
@@ -323,12 +471,18 @@ ipcMain.handle('save-file', async (event, payload) => {
     filters: Array.isArray(filters) ? filters : [{ name: '所有文件', extensions: ['*'] }],
     properties: ['createDirectory', 'showOverwriteConfirmation'],
   });
-  if (canceled || !filePath) return { canceled: true, saved: false };
+  if (canceled || !filePath) {
+    trackExportResult('canceled');
+    return { canceled: true, saved: false };
+  }
 
   try {
     await fsp.writeFile(filePath, Buffer.from(data));
+    recordExport(win);
+    trackExportResult('saved');
     return { saved: true, path: filePath };
   } catch (error) {
+    trackExportResult('failed');
     return {
       saved: false,
       error: error instanceof Error ? error.message : String(error),
@@ -347,8 +501,15 @@ ipcMain.handle('check-updates', async () => {
         },
       },
     );
-    if (response.status === 404) return { latest: null, url: RELEASES_URL };
+    if (response.status === 404) {
+      analytics?.track('update_check', { result: 'no_release' });
+      return { latest: null, url: RELEASES_URL };
+    }
     if (!response.ok) {
+      analytics?.track('update_check', {
+        result: 'error',
+        status: response.status,
+      });
       return {
         latest: null,
         url: RELEASES_URL,
@@ -358,11 +519,13 @@ ipcMain.handle('check-updates', async () => {
     const data = await response.json();
     const latest =
       typeof data.tag_name === 'string' ? data.tag_name.replace(/^v/i, '') : null;
+    analytics?.track('update_check', { result: 'ok' });
     return {
       latest,
       url: typeof data.html_url === 'string' ? data.html_url : RELEASES_URL,
     };
   } catch (error) {
+    analytics?.track('update_check', { result: 'error', stage: 'network' });
     return {
       latest: null,
       url: RELEASES_URL,
@@ -401,6 +564,20 @@ if (!gotLock) {
         credits: '使用 React + Electron 构建的字帖生成器',
       });
     }
+    let licenseStatus = null;
+    try {
+      licenseManager = createLicense({ userDataDir: app.getPath('userData') });
+      licenseStatus = licenseManager.init();
+    } catch (error) {
+      console.error('[copycraft] license init failed:', error);
+    }
+    analytics?.track('app_started', {
+      licensed: licenseStatus?.activated ? 'yes' : 'no',
+      trial_used: licenseStatus?.trialUsed ?? 0,
+      trial_limit: licenseStatus?.trialLimit ?? 30,
+      platform: process.platform,
+      arch: process.arch,
+    });
     const state = ensureVisible(loadWindowState());
     mainWindow = createWindow(state);
     buildMenu();
