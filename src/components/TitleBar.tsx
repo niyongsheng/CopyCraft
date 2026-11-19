@@ -1,4 +1,4 @@
-import { PanelLeft, Settings, SlidersHorizontal } from 'lucide-react';
+import { LibraryBig, PanelLeft, Settings, SlidersHorizontal } from 'lucide-react';
 import appIcon from '../assets/app-icon.png';
 import { useApp } from '../store/useApp';
 
@@ -8,6 +8,7 @@ export function TitleBar() {
   const toggleSidebar = useApp((s) => s.toggleSidebar);
   const toggleInspector = useApp((s) => s.toggleInspector);
   const setSettingsOpen = useApp((s) => s.setSettingsOpen);
+  const setPresetOpen = useApp((s) => s.setPresetOpen);
 
   return (
     <header className="titlebar">
@@ -46,6 +47,15 @@ export function TitleBar() {
           onClick={toggleInspector}
         >
           <SlidersHorizontal size={15} />
+        </button>
+        <button
+          type="button"
+          className="icon-btn titlebar-preset"
+          title="模板库 / 课本同步"
+          aria-label="打开模板库"
+          onClick={() => setPresetOpen(true)}
+        >
+          <LibraryBig size={15} />
         </button>
         <span className="titlebar-divider" aria-hidden="true" />
         <button

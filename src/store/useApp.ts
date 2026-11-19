@@ -7,6 +7,7 @@ import {
   defaultTitleFor,
   textKeyFor,
 } from '../lib/constants';
+import type { SheetPreset, WorkbookPreset } from '../lib/presets';
 import { isNarrowViewport } from '../lib/viewport';
 import type { SheetSettings, SheetType, TextSheetType, ThemeMode, ToolType } from '../types';
 
@@ -65,6 +66,10 @@ interface AppState {
   showSidebar: boolean;
   theme: ThemeMode;
   settingsOpen: boolean;
+  /** 模板库弹窗；不持久化。 */
+  presetOpen: boolean;
+  /** 练习册模式；不持久化，退出后回到单张字帖。 */
+  workbook: WorkbookPreset | null;
   setActiveType: (type: SheetType) => void;
   openTool: (tool: ToolType) => void;
   update: (patch: Partial<SheetSettings>) => void;
@@ -77,6 +82,10 @@ interface AppState {
   toggleSidebar: () => void;
   setTheme: (theme: ThemeMode) => void;
   setSettingsOpen: (open: boolean) => void;
+  setPresetOpen: (open: boolean) => void;
+  applyPreset: (preset: SheetPreset) => void;
+  applyWorkbook: (preset: WorkbookPreset) => void;
+  exitWorkbook: () => void;
   resetActive: () => void;
 }
 
@@ -93,10 +102,13 @@ export const useApp = create<AppState>()(
       showSidebar: true,
       theme: 'dark',
       settingsOpen: false,
+      presetOpen: false,
+      workbook: null,
 
-      setActiveType: (type) => set({ activeType: type, activeTool: null }),
+      setActiveType: (type) =>
+        set({ activeType: type, activeTool: null, workbook: null }),
 
-      openTool: (tool) => set({ activeTool: tool }),
+      openTool: (tool) => set({ activeTool: tool, workbook: null }),
 
       update: (patch) =>
         set((state) => ({
@@ -143,6 +155,35 @@ export const useApp = create<AppState>()(
       setTheme: (theme) => set({ theme }),
 
       setSettingsOpen: (open) => set({ settingsOpen: open }),
+
+      setPresetOpen: (open) => set({ presetOpen: open }),
+
+      applyPreset: (preset) =>
+        set((state) => {
+          const key = textKeyFor(preset.type);
+          return {
+            activeType: preset.type,
+            activeTool: null,
+            workbook: null,
+            presetOpen: false,
+            titles: { ...state.titles, [preset.type]: preset.pageTitle },
+            settingsByType: {
+              ...state.settingsByType,
+              [preset.type]: {
+                ...defaultSettingsFor(preset.type),
+                ...preset.settings,
+              },
+            },
+            contents: key
+              ? { ...state.contents, [key]: preset.content }
+              : state.contents,
+          };
+        }),
+
+      applyWorkbook: (preset) =>
+        set({ workbook: preset, activeTool: null, presetOpen: false }),
+
+      exitWorkbook: () => set({ workbook: null }),
 
       resetActive: () =>
         set((state) => ({

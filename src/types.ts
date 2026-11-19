@@ -1,5 +1,6 @@
 export type SheetType =
   | 'hanzi'
+  | 'hanziWords'
   | 'hanziParagraph'
   | 'name'
   | 'pinyin'
@@ -83,6 +84,7 @@ export interface SheetSettings {
 
 export type TextSheetType =
   | 'hanzi'
+  | 'hanziWords'
   | 'hanziParagraph'
   | 'name'
   | 'pinyin'

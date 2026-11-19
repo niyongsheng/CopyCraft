@@ -7,6 +7,7 @@ import './styles/refresh.css';
 import './styles/theme.css';
 import './styles/license.css';
 import './styles/glass.css';
+import './styles/presets.css';
 
 const desktop = window.desktop;
 if (desktop?.isElectron) {

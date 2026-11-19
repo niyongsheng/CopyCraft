@@ -45,6 +45,16 @@ export const SHEETS: SheetMeta[] = [
     showTextOption: false,
   },
   {
+    id: 'hanziWords',
+    label: '生字组词帖',
+    group: '常用',
+    kind: 'grid',
+    defaultTitle: '生字组词',
+    showGridOptions: true,
+    showPinyinOption: true,
+    showTextOption: false,
+  },
+  {
     id: 'hanziParagraph',
     label: '汉字段落字帖',
     group: '常用',
@@ -201,6 +211,7 @@ export const TOOL_BY_ID: Record<ToolType, ToolMeta> = Object.fromEntries(
 
 export const DEFAULT_CONTENT: Record<TextSheetType, string> = {
   hanzi: '你好世界\n好\n世\n界',
+  hanziWords: '牵 牵挂 牵头\n逊 逊色 谦逊\n疏 稀疏 疏远\n春 春天 春风\n花 花朵 花草\n草 草地 小草',
   hanziParagraph:
     '春天来了，小草悄悄地从土里探出头来。柳树抽出嫩绿的枝条，在微风中轻轻摇摆。孩子们脱下厚厚的棉衣，跑到田野里放风筝。蓝天白云下，到处都是欢声笑语，春天真美啊！',
   name: '王小明\n小明',
@@ -259,6 +270,7 @@ const baseSettings: SheetSettings = {
 
 const overrides: Partial<Record<SheetType, Partial<SheetSettings>>> = {
   hanzi: { gridSize: 34, titleHeight: 70 },
+  hanziWords: { gridSize: 44, fontSize: 72, titleHeight: 70, showPinyin: true },
   hanziParagraph: { gridSize: 32, showPinyin: false, fontSize: 68 },
   name: {
     gridSize: 40,

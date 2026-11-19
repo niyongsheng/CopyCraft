@@ -24,6 +24,8 @@ export interface CellModel {
   text: string;
   pinyin: string;
   model: boolean;
+  /** Word sheets render the head character large and its words smaller. */
+  role?: 'char' | 'word';
 }
 
 export interface GridRowModel {
@@ -199,6 +201,8 @@ function buildGridModel(
   settings: SheetSettings,
   content: string,
 ): GridModel {
+  if (type === 'hanziWords') return buildWordGridModel(settings, content);
+
   const showPinyin = settings.showPinyin && (type === 'hanzi' || type === 'name');
   const { metrics, cols, cellW, pinyinH, rowH, rowsPerPage, charPx } = gridLayout(
     settings,
@@ -261,6 +265,87 @@ function buildGridModel(
     }
     if (rows.length === 0) rows.push(blank());
   }
+
+  return {
+    kind: 'grid',
+    metrics,
+    cellW,
+    rowH,
+    pinyinH,
+    charPx,
+    cols,
+    pages: paginate(rows, rowsPerPage, blank).map((pageRows) => ({ rows: pageRows })),
+  };
+}
+
+const WORD_SLOTS_MAX = 3;
+
+function pinyinLabel(text: string): string {
+  const parts = Array.from(text)
+    .map((char) => pinyinOf(char))
+    .filter(Boolean);
+  return parts.join(' ');
+}
+
+/**
+ * 生字组词帖：每行一个「生字 + 词语」条目，条目在整行重复铺满。
+ * 首组生字用墨色，其余组和词语用描红色，形成「看一个、描一串」的节奏。
+ */
+function buildWordGridModel(settings: SheetSettings, content: string): GridModel {
+  const showPinyin = settings.showPinyin;
+  const { metrics, cols, cellW, pinyinH, rowH, rowsPerPage, charPx } = gridLayout(
+    settings,
+    showPinyin,
+  );
+
+  const entries = content
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const tokens = line.split(/\s+/).filter(Boolean);
+      return {
+        head: tokens[0] ?? '',
+        words: tokens.slice(1, 1 + WORD_SLOTS_MAX),
+      };
+    })
+    .filter((entry) => entry.head.length > 0);
+
+  const wordSlots = Math.max(1, ...entries.map((entry) => entry.words.length));
+  const groupW = 1 + wordSlots;
+  const groupsPerRow = Math.max(1, Math.floor(cols / groupW));
+
+  const makeGroup = (entry: (typeof entries)[number], first: boolean): CellModel[] => {
+    const cells: CellModel[] = [
+      {
+        text: entry.head,
+        pinyin: showPinyin ? pinyinLabel(entry.head) : '',
+        model: first,
+        role: 'char',
+      },
+    ];
+    for (let i = 0; i < wordSlots; i += 1) {
+      cells.push({
+        text: entry.words[i] ?? '',
+        pinyin: '',
+        model: false,
+        role: 'word',
+      });
+    }
+    return cells;
+  };
+
+  const blank = () => blankRow(cols);
+  const rows: GridRowModel[] = entries.length
+    ? entries.map((entry) => {
+        const cells: CellModel[] = [];
+        for (let i = 0; i < groupsPerRow; i += 1) {
+          cells.push(...makeGroup(entry, i === 0));
+        }
+        while (cells.length < cols) cells.push({ text: '', pinyin: '', model: false });
+        return { cells: cells.slice(0, cols) };
+      })
+    : [blank()];
 
   return {
     kind: 'grid',

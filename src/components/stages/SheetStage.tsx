@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ArrowLeft,
   ChevronDown,
   FileDown,
   FileText,
@@ -12,22 +13,22 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { useSheetModel } from '../../hooks/useSheetModel';
-import { PAGE_WIDTH, SHEET_BY_ID, isGeneratedSheet } from '../../lib/constants';
+import {
+  PAGE_WIDTH,
+  SHEET_BY_ID,
+  defaultSettingsFor,
+  isGeneratedSheet,
+} from '../../lib/constants';
 import { track } from '../../lib/analytics';
 import { downloadBlob, exportFileName } from '../../lib/download';
+import { buildSheetModel } from '../../lib/model';
 import { useApp } from '../../store/useApp';
 import {
   selectTrialBlocked,
   selectTrialRemainingCount,
   useLicense,
 } from '../../store/useLicense';
-import { ClockSheet } from '../sheets/ClockSheet';
-import { FourLineSheet } from '../sheets/FourLineSheet';
-import { GridSheet } from '../sheets/GridSheet';
-import { MathSheet } from '../sheets/MathSheet';
-import { NameStrokeSheet } from '../sheets/NameStrokeSheet';
-import { PenSheet } from '../sheets/PenSheet';
-import { VerticalSheet } from '../sheets/VerticalSheet';
+import { SheetView } from '../sheets/SheetView';
 
 export function SheetStage() {
   const activeType = useApp((s) => s.activeType);
@@ -35,10 +36,28 @@ export function SheetStage() {
   const settings = useApp((s) => s.settingsByType[activeType]);
   const title = useApp((s) => s.titles[activeType]);
   const name = useApp((s) => s.contents.name);
+  const seed = useApp((s) => s.seed);
   const shuffle = useApp((s) => s.shuffle);
+  const workbook = useApp((s) => s.workbook);
+  const exitWorkbook = useApp((s) => s.exitWorkbook);
   const showInspector = useApp((s) => s.showInspector);
   const toggleInspector = useApp((s) => s.toggleInspector);
   const { model, stroke } = useSheetModel();
+
+  const workbookSheets = useMemo(() => {
+    if (!workbook) return null;
+    return workbook.sections.map((section) => {
+      const sectionSettings = {
+        ...defaultSettingsFor(section.type),
+        ...section.settings,
+      };
+      return {
+        section,
+        settings: sectionSettings,
+        model: buildSheetModel(section.type, sectionSettings, section.content, seed),
+      };
+    });
+  }, [workbook, seed]);
 
   const desktopLicense = Boolean(window.desktop?.isElectron);
   const licenseStatus = useLicense((s) => s.status);
@@ -74,10 +93,15 @@ export function SheetStage() {
   }, [toast]);
 
   const zoom = autoFit ? fitZoom : userZoom;
-  const pageCount = useMemo(
-    () => (model.kind === 'pen' ? 1 : model.pages.length),
-    [model],
-  );
+  const pageCount = useMemo(() => {
+    if (workbookSheets) {
+      return workbookSheets.reduce(
+        (sum, item) => sum + (item.model.kind === 'pen' ? 1 : item.model.pages.length),
+        0,
+      );
+    }
+    return model.kind === 'pen' ? 1 : model.pages.length;
+  }, [model, workbookSheets]);
 
   const changeZoom = (delta: number) => {
     setAutoFit(false);
@@ -182,56 +206,42 @@ export function SheetStage() {
   };
 
   const sheet = useMemo(() => {
-    switch (model.kind) {
-      case 'grid':
-        return (
-          <GridSheet
-            model={model}
-            settings={settings}
-            title={title}
-            name={meta.id === 'name' ? name.split('\n')[0] : undefined}
-          />
-        );
-      case 'name-stroke':
-        return (
-          <NameStrokeSheet
-            model={model}
-            settings={settings}
-            title={title}
-            name={name.split('\n')[0]}
-          />
-        );
-      case 'fourline':
-        return (
-          <FourLineSheet
-            model={model}
-            settings={settings}
-            title={title}
-            showText={meta.showTextOption ? settings.showText : true}
-          />
-        );
-      case 'pen':
-        return <PenSheet model={model} settings={settings} title={title} />;
-      case 'math':
-        return <MathSheet model={model} settings={settings} title={title} />;
-      case 'vertical':
-        return <VerticalSheet model={model} settings={settings} title={title} />;
-      case 'clock':
-        return <ClockSheet model={model} settings={settings} title={title} />;
+    if (workbookSheets) {
+      return workbookSheets.map((item, index) => (
+        <SheetView
+          key={`${item.section.type}-${index}`}
+          type={item.section.type}
+          model={item.model}
+          settings={item.settings}
+          title={item.section.title}
+        />
+      ));
     }
-  }, [model, settings, title, name, meta]);
+    return (
+      <SheetView
+        type={activeType}
+        model={model}
+        settings={settings}
+        title={title}
+        name={meta.id === 'name' ? name.split('\n')[0] : undefined}
+      />
+    );
+  }, [workbookSheets, activeType, model, settings, title, name, meta]);
 
   return (
     <main className="stage">
       <div className="stage-toolbar">
         <div className="stage-title">
           <div className="stage-heading">
-            <span className="stage-eyebrow">字帖预览</span>
-            <span className="stage-name">{meta.label}</span>
+            <span className="stage-eyebrow">{workbook ? '练习册预览' : '字帖预览'}</span>
+            <span className="stage-name">{workbook ? workbook.title : meta.label}</span>
           </div>
           <div className="stage-chips">
             <span className="meta-chip">A4</span>
             <span className="meta-chip">{pageCount} 页</span>
+            {workbook && (
+              <span className="meta-chip">{workbook.sections.length} 张字帖</span>
+            )}
             {desktopLicense && licenseStatus && !licenseStatus.activated && (
               <span
                 className={`meta-chip ${trialBlocked ? 'is-warn' : ''}`}
@@ -240,7 +250,7 @@ export function SheetStage() {
                 {trialBlocked ? '试用已结束' : `试用剩余 ${remainingCount} 次`}
               </span>
             )}
-            {meta.id === 'name' && settings.nameStrokeOrder && (
+            {!workbook && meta.id === 'name' && settings.nameStrokeOrder && (
               stroke.loading ? (
                 <span className="meta-chip is-warn">
                   <Loader2 size={9} className="spin" /> 笔顺加载中
@@ -257,7 +267,19 @@ export function SheetStage() {
         </div>
 
         <div className="stage-actions">
-          {isGeneratedSheet(meta) && (
+          {workbook && (
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={exitWorkbook}
+              title="退出练习册，返回单张字帖"
+            >
+              <ArrowLeft size={14} />
+              退出练习册
+            </button>
+          )}
+
+          {!workbook && isGeneratedSheet(meta) && (
             <button
               type="button"
               className="btn btn-ghost"

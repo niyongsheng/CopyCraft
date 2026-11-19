@@ -13,6 +13,7 @@ import {
 
 const CONTENT_HINT: Record<TextSheetType, string> = {
   hanzi: '每行一组内容，自动循环铺满整行',
+  hanziWords: '每行「生字 词语1 词语2」，生字与组词一起练',
   hanziParagraph: '输入一段文字，按格子自动排版',
   name: '每行一个名字，首行用于页眉姓名卡',
   pinyin: '每行一组拼音字母，自动循环练习',
@@ -122,6 +123,39 @@ function SheetInspector({ open }: { open: boolean }) {
   );
 }
 
+function WorkbookInspector({ open }: { open: boolean }) {
+  const workbook = useApp((s) => s.workbook);
+  const exitWorkbook = useApp((s) => s.exitWorkbook);
+  if (!workbook) return null;
+
+  return (
+    <Panel open={open} title="练习册" subtitle="多张字帖合成">
+      <Section label="包含字帖" icon={<FileText size={14} />}>
+        <div className="workbook-list">
+          {workbook.sections.map((section, index) => {
+            const meta = SHEET_BY_ID[section.type];
+            return (
+              <div className="workbook-row" key={`${section.type}-${index}`}>
+                <span className="workbook-row-index">{index + 1}</span>
+                <span className="workbook-row-text">
+                  <strong>{section.title}</strong>
+                  <small>{meta.label}</small>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        <p className="inspector-note">
+          练习册按顺序渲染全部字帖，导出 PDF / Word 时会一次输出所有页面。修改单张字帖的设置请先退出练习册。
+        </p>
+        <button type="button" className="text-button" onClick={exitWorkbook}>
+          退出练习册，返回单张编辑
+        </button>
+      </Section>
+    </Panel>
+  );
+}
+
 function ToolInspector({ open, tool }: { open: boolean; tool: ToolType }) {
   const meta = TOOL_BY_ID[tool];
   return (
@@ -142,9 +176,8 @@ function ToolInspector({ open, tool }: { open: boolean; tool: ToolType }) {
 
 export function Inspector({ open }: { open: boolean }) {
   const activeTool = useApp((s) => s.activeTool);
-  return activeTool ? (
-    <ToolInspector open={open} tool={activeTool} />
-  ) : (
-    <SheetInspector open={open} />
-  );
+  const workbook = useApp((s) => s.workbook);
+  if (activeTool) return <ToolInspector open={open} tool={activeTool} />;
+  if (workbook) return <WorkbookInspector open={open} />;
+  return <SheetInspector open={open} />;
 }

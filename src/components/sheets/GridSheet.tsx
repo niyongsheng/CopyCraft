@@ -24,14 +24,20 @@ export function GridSheet({
       name={name}
       pinyinOf={(cell) => cell.pinyin}
       renderCell={(cell) => cell.text}
-      charStyle={(cell) => ({
-        fontSize: model.charPx,
-        lineHeight: 1,
-        fontFamily: font,
-        fontWeight: settings.fontWeight,
-        color: cell.model ? settings.inkColor : settings.traceColor,
-        transform: `translate(${settings.offsetX}px, ${settings.offset}px)`,
-      })}
+      charStyle={(cell) => {
+        const word = cell.role === 'word';
+        const length = Math.max(1, Array.from(cell.text).length);
+        return {
+          fontSize: word
+            ? model.charPx * Math.min(0.66, 1.28 / length)
+            : model.charPx,
+          lineHeight: 1,
+          fontFamily: font,
+          fontWeight: settings.fontWeight,
+          color: word || !cell.model ? settings.traceColor : settings.inkColor,
+          transform: `translate(${settings.offsetX}px, ${settings.offset}px)`,
+        };
+      }}
     />
   );
 }

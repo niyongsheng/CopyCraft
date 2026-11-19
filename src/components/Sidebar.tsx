@@ -1,11 +1,13 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   AlignLeft,
+  BookOpen,
   CaseUpper,
   Clock3,
   Divide,
   Hash,
   Languages,
+  LibraryBig,
   PenLine,
   Pilcrow,
   Plus,
@@ -28,6 +30,7 @@ const GROUP_ORDER: SheetGroup[] = ['常用', '英文', '数学', '工具'];
 const SHEET_ICONS: Record<SheetType, LucideIcon> = {
   name: UserRound,
   hanzi: PenLine,
+  hanziWords: BookOpen,
   hanziParagraph: AlignLeft,
   pinyin: Languages,
   stroke: Spline,
@@ -51,8 +54,10 @@ const TOOL_ICONS: Record<ToolType, LucideIcon> = {
 export function Sidebar({ open }: { open: boolean }) {
   const activeType = useApp((s) => s.activeType);
   const activeTool = useApp((s) => s.activeTool);
+  const workbook = useApp((s) => s.workbook);
   const setActiveType = useApp((s) => s.setActiveType);
   const openTool = useApp((s) => s.openTool);
+  const setPresetOpen = useApp((s) => s.setPresetOpen);
 
   return (
     <aside
@@ -68,6 +73,14 @@ export function Sidebar({ open }: { open: boolean }) {
           </div>
           <div className="sidebar-intro-title">开始制作字帖</div>
           <div className="sidebar-intro-sub">选择模板，右侧实时预览</div>
+          <button
+            type="button"
+            className="sidebar-preset"
+            onClick={() => setPresetOpen(true)}
+          >
+            <LibraryBig size={14} />
+            模板库 / 课本同步
+          </button>
         </div>
 
         {GROUP_ORDER.map((group) => {
@@ -80,7 +93,7 @@ export function Sidebar({ open }: { open: boolean }) {
               <nav className="sheet-list" aria-label={`${group}字帖`}>
                 {sheets.map((sheet) => {
                   const Icon = SHEET_ICONS[sheet.id];
-                  const active = !activeTool && activeType === sheet.id;
+                  const active = !activeTool && !workbook && activeType === sheet.id;
                   return (
                     <button
                       type="button"

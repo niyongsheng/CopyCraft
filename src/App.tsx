@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { Inspector } from './components/Inspector';
+import { PresetDialog } from './components/PresetDialog';
 import { SettingsDialog } from './components/SettingsDialog';
 import { Sidebar } from './components/Sidebar';
 import { Stage } from './components/Stage';
 import { TitleBar } from './components/TitleBar';
 import { initAnalytics, track } from './lib/analytics';
+import { isWorkbookPreset, presetById } from './lib/presets';
 import { isNarrowViewport } from './lib/viewport';
 import { useApp } from './store/useApp';
 import { useLicense } from './store/useLicense';
@@ -26,6 +28,30 @@ export default function App() {
 
   useEffect(() => {
     void initAnalytics();
+  }, []);
+
+  // 分享链接：?preset=<id> 打开即套用，应用后从地址栏移除，避免刷新时重复覆盖。
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('preset');
+    if (!id) return;
+    const preset = presetById(id);
+    if (!preset) return;
+    if (isWorkbookPreset(preset)) useApp.getState().applyWorkbook(preset);
+    else useApp.getState().applyPreset(preset);
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('preset');
+      window.history.replaceState({}, '', url);
+    } catch {
+      /* file:// 等环境可能不允许改写地址，忽略即可。 */
+    }
+    void initAnalytics().then(() =>
+      track('preset_used', {
+        preset: preset.id,
+        category: preset.category,
+        source: 'link',
+      }),
+    );
   }, []);
 
   // 跳过首次渲染，只统计用户主动切换字帖类型的行为。
@@ -101,6 +127,7 @@ export default function App() {
         <Stage />
       </div>
       {settingsOpen && <SettingsDialog />}
+      <PresetDialog />
     </div>
   );
 }
