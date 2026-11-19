@@ -23,6 +23,8 @@ jobs:
       - run: npm ci
       - run: npm run test:license
       - run: npm run build:web
+      - name: Add custom domain
+        run: echo "copycraft.looplooptech.com" > dist/CNAME
       - uses: actions/upload-artifact@v4
         with:
           name: web-dist
