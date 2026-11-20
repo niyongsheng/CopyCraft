@@ -1,4 +1,4 @@
-const REPO = 'niyongsheng/Copycraft';
+const REPO = 'niyongsheng/CopyCraft';
 
 export const REPO_URL = `https://github.com/${REPO}`;
 export const RELEASES_URL = `https://github.com/${REPO}/releases`;

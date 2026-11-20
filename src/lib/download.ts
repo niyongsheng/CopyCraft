@@ -4,7 +4,7 @@ export function exportFileName(extension: 'pdf' | 'docx'): string {
   const d = new Date();
   const p = (n: number) => String(n).padStart(2, '0');
   const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
-  return `Copycraft-${tGlobal('export.worksheetWord')}-${stamp}.${extension}`;
+  return `CopyCraft-${tGlobal('export.worksheetWord')}-${stamp}.${extension}`;
 }
 
 export function downloadBlob(blob: Blob, filename: string): void {

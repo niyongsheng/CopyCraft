@@ -24,7 +24,9 @@ const DEV_URL = process.env.VITE_DEV_SERVER_URL || '';
 const ROOT = path.join(__dirname, '..');
 const ICON = path.join(ROOT, 'build', 'icon.png');
 
-app.setName('Copycraft 字帖工坊');
+const APP_NAME = 'CopyCraft';
+app.setName(APP_NAME);
+app.setPath('userData', path.join(app.getPath('appData'), APP_NAME));
 if (isWin) app.setAppUserModelId('com.copycraft.app');
 
 // Aptabase 要求 initialize 在 app ready 之前调用；此处只注册，不会自动上报事件。
@@ -86,7 +88,7 @@ function recordExport(win) {
   }
 }
 
-const UPDATE_REPO = 'niyongsheng/Copycraft';
+const UPDATE_REPO = 'niyongsheng/CopyCraft';
 const RELEASES_URL = `https://github.com/${UPDATE_REPO}/releases`;
 
 const THEME_COLORS = {
@@ -288,7 +290,7 @@ async function exportPdf(win) {
       title: t('dialog.exportPdfTitle'),
       defaultPath: path.join(
         app.getPath('downloads'),
-        `Copycraft-${t('export.worksheetWord')}-${timestamp()}.pdf`,
+        `CopyCraft-${t('export.worksheetWord')}-${timestamp()}.pdf`,
       ),
       filters: [{ name: t('filter.pdf'), extensions: ['pdf'] }],
       properties: ['createDirectory', 'showOverwriteConfirmation'],
@@ -567,7 +569,7 @@ ipcMain.handle('save-file', async (event, payload) => {
   const blocked = exportGate(format);
   if (blocked) return blocked;
 
-  const safeName = path.basename(String(defaultName || 'Copycraft-export'));
+  const safeName = path.basename(String(defaultName || 'CopyCraft-export'));
   const { canceled, filePath } = await dialog.showSaveDialog(win, {
     title: t('dialog.saveFile'),
     defaultPath: path.join(app.getPath('downloads'), safeName),
@@ -602,7 +604,7 @@ ipcMain.handle('check-updates', async () => {
       {
         headers: {
           Accept: 'application/vnd.github+json',
-          'User-Agent': `Copycraft/${app.getVersion()}`,
+          'User-Agent': `CopyCraft/${app.getVersion()}`,
         },
       },
     );

@@ -25,8 +25,7 @@ export function TitleBar() {
     <header className="titlebar">
       <div className="brand">
         <img className="brand-mark" src={appIcon} alt="" aria-hidden="true" />
-        <span className="brand-name">Copycraft</span>
-        <span className="brand-sub">{t('app.brandSub')}</span>
+        <span className="brand-name">{t('app.name')}</span>
         <span className="brand-badge">
           {desktop ? t('app.desktop') : t('app.web')}
         </span>

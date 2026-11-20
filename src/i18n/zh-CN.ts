@@ -3,7 +3,7 @@
  * typed against these keys, so a missing translation is a compile error.
  */
 const zhCN = {
-  'app.name': 'Copycraft 字帖工坊',
+  'app.name': '字帖工坊',
   'app.brandSub': '字帖工坊',
   'app.desktop': 'DESKTOP',
   'app.web': 'WEB',
@@ -36,7 +36,7 @@ const zhCN = {
   'sidebar.groupMath': '数学',
   'sidebar.groupTools': '工具',
   'sidebar.groupAria': '{group}字帖',
-  'sidebar.versionTitle': 'Copycraft 版本',
+  'sidebar.versionTitle': 'CopyCraft 版本',
   'sidebar.licenseTitle': '查看 MIT 开源许可',
 
   'sheet.name': '姓名字帖',
@@ -324,8 +324,8 @@ const zhCN = {
   'settings.viewPrivacy': '查看隐私政策',
   'settings.support': '支持',
   'settings.supportTitle': '赞助',
-  'settings.supportDesc': '如果 Copycraft 帮到了你，欢迎在爱发电支持后续开发。',
-  'settings.afdianTitle': '在爱发电支持 Copycraft',
+  'settings.supportDesc': '如果 CopyCraft 帮到了你，欢迎在爱发电支持后续开发。',
+  'settings.afdianTitle': '在爱发电支持 CopyCraft',
   'settings.afdian': '爱发电',
   'settings.about': '关于',
   'settings.version': '版本 v{version} · {edition}',

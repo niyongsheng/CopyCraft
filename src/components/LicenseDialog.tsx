@@ -18,7 +18,7 @@ export function LicenseDialog({ onClose }: { onClose: () => void }) {
       meta={
         <>
           <Scale size={14} />
-          <span>Copyright (c) 2026 Copycraft</span>
+          <span>Copyright (c) 2026 CopyCraft</span>
         </>
       }
     >

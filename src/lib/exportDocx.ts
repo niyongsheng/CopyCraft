@@ -16,7 +16,7 @@ export async function createDocxFromPages(): Promise<{ blob: Blob; pages: number
   );
 
   const doc = new Document({
-    creator: 'Copycraft',
+    creator: 'CopyCraft',
     title: tGlobal('app.name'),
     description: `${tGlobal('app.name')} — ${tGlobal('export.worksheetWord')}`,
     sections: [

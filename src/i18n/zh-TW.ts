@@ -2,7 +2,7 @@ import type { I18nKey } from './zh-CN';
 
 /** Traditional Chinese with Taiwan vocabulary. */
 const zhTW: Record<I18nKey, string> = {
-  'app.name': 'Copycraft 字帖工坊',
+  'app.name': '字帖工坊',
   'app.brandSub': '字帖工坊',
   'app.desktop': 'DESKTOP',
   'app.web': 'WEB',
@@ -35,7 +35,7 @@ const zhTW: Record<I18nKey, string> = {
   'sidebar.groupMath': '數學',
   'sidebar.groupTools': '工具',
   'sidebar.groupAria': '{group}字帖',
-  'sidebar.versionTitle': 'Copycraft 版本',
+  'sidebar.versionTitle': 'CopyCraft 版本',
   'sidebar.licenseTitle': '查看 MIT 開源授權',
 
   'sheet.name': '姓名字帖',
@@ -323,8 +323,8 @@ const zhTW: Record<I18nKey, string> = {
   'settings.viewPrivacy': '查看隱私權政策',
   'settings.support': '支援',
   'settings.supportTitle': '贊助',
-  'settings.supportDesc': '如果 Copycraft 對你有幫助，歡迎在愛發電支援後續開發。',
-  'settings.afdianTitle': '在愛發電支援 Copycraft',
+  'settings.supportDesc': '如果 CopyCraft 對你有幫助，歡迎在愛發電支援後續開發。',
+  'settings.afdianTitle': '在愛發電支援 CopyCraft',
   'settings.afdian': '愛發電',
   'settings.about': '關於',
   'settings.version': '版本 v{version} · {edition}',

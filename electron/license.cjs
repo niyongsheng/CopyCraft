@@ -14,7 +14,7 @@ const core = require('./license-core.cjs');
 const { LicenseStore, createFileShadow } = require('./license-store.cjs');
 
 /** Windows 影子注册表位置（NSIS 卸载默认不清理 HKCU）。 */
-const WIN_SHADOW_KEY = 'HKCU\\Software\\Copycraft\\license';
+const WIN_SHADOW_KEY = 'HKCU\\Software\\CopyCraft\\license';
 
 /** 执行系统命令（超时 / 隐藏窗口 / 失败返回 null）。 */
 function tryExec(file, args, options = {}) {

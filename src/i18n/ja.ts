@@ -2,7 +2,7 @@ import type { I18nKey } from './zh-CN';
 
 /** Japanese. */
 const ja: Record<I18nKey, string> = {
-  'app.name': 'Copycraft 練習帳スタジオ',
+  'app.name': 'Copy Craft',
   'app.brandSub': '練習帳スタジオ',
   'app.desktop': 'DESKTOP',
   'app.web': 'WEB',
@@ -35,7 +35,7 @@ const ja: Record<I18nKey, string> = {
   'sidebar.groupMath': '算数',
   'sidebar.groupTools': 'ツール',
   'sidebar.groupAria': '{group}の練習帳',
-  'sidebar.versionTitle': 'Copycraft のバージョン',
+  'sidebar.versionTitle': 'CopyCraft のバージョン',
   'sidebar.licenseTitle': 'MIT ライセンスを表示',
 
   'sheet.name': '名前の練習帳',
@@ -323,8 +323,8 @@ const ja: Record<I18nKey, string> = {
   'settings.viewPrivacy': 'プライバシーポリシーを表示',
   'settings.support': 'サポート',
   'settings.supportTitle': 'スポンサー',
-  'settings.supportDesc': 'Copycraft が役に立ったら、Afdian で今後の開発を支援していただけると嬉しいです。',
-  'settings.afdianTitle': 'Afdian で Copycraft を支援',
+  'settings.supportDesc': 'CopyCraft が役に立ったら、Afdian で今後の開発を支援していただけると嬉しいです。',
+  'settings.afdianTitle': 'Afdian で CopyCraft を支援',
   'settings.afdian': 'Afdian',
   'settings.about': 'このアプリについて',
   'settings.version': 'バージョン v{version} · {edition}',

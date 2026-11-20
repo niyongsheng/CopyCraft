@@ -21,7 +21,7 @@ export async function createPdfFromPages(): Promise<{ blob: Blob; pages: number 
 
   pdf.setProperties({
     title: tGlobal('app.name'),
-    creator: 'Copycraft',
+    creator: 'CopyCraft',
   });
 
   pages.forEach((dataUrl, index) => {

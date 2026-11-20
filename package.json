@@ -4,16 +4,16 @@
   "version": "0.3.0",
   "type": "module",
   "main": "electron/main.cjs",
-  "description": "Copycraft 字帖工坊 — 支持 Web、macOS 与 Windows 的字帖生成器",
-  "author": "Copycraft",
+  "description": "CopyCraft 字帖工坊 — 支持 Web、macOS 与 Windows 的字帖生成器",
+  "author": "CopyCraft",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/niyongsheng/Copycraft.git"
+    "url": "git+https://github.com/niyongsheng/CopyCraft.git"
   },
   "homepage": "https://copycraft.looplooptech.com/",
   "bugs": {
-    "url": "https://github.com/niyongsheng/Copycraft/issues"
+    "url": "https://github.com/niyongsheng/CopyCraft/issues"
   },
   "scripts": {
     "dev": "vite",

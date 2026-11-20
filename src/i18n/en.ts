@@ -2,7 +2,7 @@ import type { I18nKey } from './zh-CN';
 
 /** English. Count strings use "singular|plural" and are picked by `count`. */
 const en: Record<I18nKey, string> = {
-  'app.name': 'Copycraft Worksheet Studio',
+  'app.name': 'Copy Craft',
   'app.brandSub': 'Worksheet Studio',
   'app.desktop': 'DESKTOP',
   'app.web': 'WEB',
@@ -35,7 +35,7 @@ const en: Record<I18nKey, string> = {
   'sidebar.groupMath': 'Math',
   'sidebar.groupTools': 'Tools',
   'sidebar.groupAria': '{group} worksheets',
-  'sidebar.versionTitle': 'Copycraft version',
+  'sidebar.versionTitle': 'CopyCraft version',
   'sidebar.licenseTitle': 'View the MIT license',
 
   'sheet.name': 'Name worksheet',
@@ -323,8 +323,8 @@ const en: Record<I18nKey, string> = {
   'settings.viewPrivacy': 'View privacy policy',
   'settings.support': 'Support',
   'settings.supportTitle': 'Sponsor',
-  'settings.supportDesc': 'If Copycraft helps you, consider supporting future development on Afdian.',
-  'settings.afdianTitle': 'Support Copycraft on Afdian',
+  'settings.supportDesc': 'If CopyCraft helps you, consider supporting future development on Afdian.',
+  'settings.afdianTitle': 'Support CopyCraft on Afdian',
   'settings.afdian': 'Afdian',
   'settings.about': 'About',
   'settings.version': 'Version v{version} · {edition}',

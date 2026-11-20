@@ -1,7 +1,8 @@
 appId: com.copycraft.app
-productName: Copycraft 字帖工坊
-copyright: Copyright © 2026 Copycraft
-artifactName: Copycraft-${version}-${os}-${arch}.${ext}
+productName: CopyCraft
+copyright: Copyright © 2026 CopyCraft
+artifactName: CopyCraft-${version}-${os}-${arch}.${ext}
+afterPack: ./build/after-pack.cjs
 
 directories:
   output: release
@@ -35,6 +36,9 @@ mac:
   # normal "unidentified developer" prompt instead.
   identity: "-"
   hardenedRuntime: false
+  extendInfo:
+    LSHasLocalizedDisplayName: true
+    CFBundleDevelopmentRegion: en
   target:
     - target: dmg
       arch:
@@ -50,7 +54,7 @@ mac:
         - x64
 
 dmg:
-  title: Copycraft 字帖工坊
+  title: CopyCraft
 
 pkg:
   # Postinstall lives in build/pkg-scripts/postinstall. It runs after the
@@ -61,7 +65,7 @@ pkg:
 
 win:
   icon: build/icon.ico
-  executableName: Copycraft
+  executableName: CopyCraft
   target:
     - target: nsis
       arch:
@@ -71,12 +75,13 @@ win:
         - x64
 
 nsis:
+  include: installer.nsh
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
-  shortcutName: Copycraft 字帖工坊
-  artifactName: Copycraft-Setup-${version}-${arch}.${ext}
+  shortcutName: CopyCraft
+  artifactName: CopyCraft-Setup-${version}-${arch}.${ext}
 
 portable:
-  artifactName: Copycraft-Portable-${version}-${arch}.${ext}
+  artifactName: CopyCraft-Portable-${version}-${arch}.${ext}

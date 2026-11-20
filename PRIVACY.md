@@ -1,8 +1,8 @@
-# Copycraft 隐私政策
+# CopyCraft 隐私政策
 
 生效日期：2026-11-20
 
-本政策适用于 Copycraft 字帖工坊（网页版、macOS 版和 Windows 版，以下简称“本应用”）。我们尽量让字帖内容留在你的设备上，只处理维持功能所必需的最少信息。
+本政策适用于 CopyCraft 字帖工坊（网页版、macOS 版和 Windows 版，以下简称“本应用”）。我们尽量让字帖内容留在你的设备上，只处理维持功能所必需的最少信息。
 
 ## 1. 字帖内容
 
@@ -63,4 +63,4 @@
 
 - 邮箱：niyongsheng@Outlook.com
 - 网站：https://copycraft.looplooptech.com/
-- 仓库：https://github.com/niyongsheng/Copycraft
+- 仓库：https://github.com/niyongsheng/CopyCraft

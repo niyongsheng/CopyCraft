@@ -2,7 +2,7 @@ import type { I18nKey } from './zh-CN';
 
 /** Korean. */
 const ko: Record<I18nKey, string> = {
-  'app.name': 'Copycraft 연습장 스튜디오',
+  'app.name': 'Copy Craft',
   'app.brandSub': '연습장 스튜디오',
   'app.desktop': 'DESKTOP',
   'app.web': 'WEB',
@@ -35,7 +35,7 @@ const ko: Record<I18nKey, string> = {
   'sidebar.groupMath': '수학',
   'sidebar.groupTools': '도구',
   'sidebar.groupAria': '{group} 연습장',
-  'sidebar.versionTitle': 'Copycraft 버전',
+  'sidebar.versionTitle': 'CopyCraft 버전',
   'sidebar.licenseTitle': 'MIT 라이선스 보기',
 
   'sheet.name': '이름 연습장',
@@ -323,8 +323,8 @@ const ko: Record<I18nKey, string> = {
   'settings.viewPrivacy': '개인정보 처리방침 보기',
   'settings.support': '후원',
   'settings.supportTitle': '후원',
-  'settings.supportDesc': 'Copycraft가 도움이 되었다면 Afdian에서 앞으로의 개발을 후원해 주세요.',
-  'settings.afdianTitle': 'Afdian에서 Copycraft 후원',
+  'settings.supportDesc': 'CopyCraft가 도움이 되었다면 Afdian에서 앞으로의 개발을 후원해 주세요.',
+  'settings.afdianTitle': 'Afdian에서 CopyCraft 후원',
   'settings.afdian': 'Afdian',
   'settings.about': '정보',
   'settings.version': '버전 v{version} · {edition}',
