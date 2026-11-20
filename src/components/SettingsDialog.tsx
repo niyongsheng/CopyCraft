@@ -10,6 +10,7 @@ import {
   Heart,
   Info,
   KeyRound,
+  Languages,
   Loader2,
   Moon,
   Palette,
@@ -22,12 +23,16 @@ import {
 import { LicenseDialog } from './LicenseDialog';
 import { PrivacyDialog } from './PrivacyDialog';
 import { useUpdateCheck } from '../hooks/useUpdateCheck';
+import { LANGUAGES } from '../i18n';
+import { useT } from '../i18n/useT';
 import {
   applyAnalyticsState,
   getWebAnalyticsState,
   setWebAnalyticsEnabled,
 } from '../lib/analytics';
+import { copyText } from '../lib/clipboard';
 import { formatFingerprint, formatLicenseDate } from '../lib/license';
+import { isDesktop } from '../lib/platform';
 import { REPO_URL } from '../lib/updates';
 import { APP_VERSION } from '../lib/version';
 import { useApp } from '../store/useApp';
@@ -38,24 +43,28 @@ import {
   useLicense,
 } from '../store/useLicense';
 import type { ThemeMode } from '../types';
+import type { I18nKey } from '../i18n';
 
 const THEME_OPTIONS: {
   id: ThemeMode;
-  label: string;
-  hint: string;
+  labelKey: I18nKey;
+  hintKey: I18nKey;
   icon: typeof Sun;
 }[] = [
-  { id: 'light', label: '明亮', hint: '清爽的浅色界面', icon: Sun },
-  { id: 'dark', label: '暗黑', hint: '专注的深色界面', icon: Moon },
+  { id: 'light', labelKey: 'settings.themeLight', hintKey: 'settings.themeLightHint', icon: Sun },
+  { id: 'dark', labelKey: 'settings.themeDark', hintKey: 'settings.themeDarkHint', icon: Moon },
 ];
 
 export function SettingsDialog() {
+  const t = useT();
   const theme = useApp((s) => s.theme);
   const setTheme = useApp((s) => s.setTheme);
+  const language = useApp((s) => s.language);
+  const setLanguage = useApp((s) => s.setLanguage);
   const setSettingsOpen = useApp((s) => s.setSettingsOpen);
   const { state: update, checking, check, openRelease } = useUpdateCheck();
 
-  const desktop = Boolean(window.desktop?.isElectron);
+  const desktop = isDesktop();
   const licenseStatus = useLicense((s) => s.status);
   const licenseError = useLicense((s) => s.error);
   const licenseLoading = useLicense((s) => s.loading);
@@ -138,12 +147,11 @@ export function SettingsDialog() {
 
   const copyFingerprint = async () => {
     if (!licenseStatus) return;
-    try {
-      await navigator.clipboard.writeText(licenseStatus.machineFingerprint);
+    if (await copyText(licenseStatus.machineFingerprint)) {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
-    } catch {
-      setLicenseMessage({ tone: 'error', text: '复制失败，请手动选择指纹复制' });
+    } else {
+      setLicenseMessage({ tone: 'error', text: t('license.copyFailed') });
     }
   };
 
@@ -155,9 +163,12 @@ export function SettingsDialog() {
       const result = await activateLicense(code.trim());
       if (result.ok) {
         setCode('');
-        setLicenseMessage({ tone: 'ok', text: '激活成功，已解锁无限次导出。' });
+        setLicenseMessage({ tone: 'ok', text: t('license.activateSuccess') });
       } else {
-        setLicenseMessage({ tone: 'error', text: result.error ?? '激活失败' });
+        setLicenseMessage({
+          tone: 'error',
+          text: result.error ?? t('license.activateFailed'),
+        });
       }
     } catch (error) {
       setLicenseMessage({
@@ -174,15 +185,15 @@ export function SettingsDialog() {
       return {
         tone: 'web',
         icon: Info,
-        title: '网页版无需激活',
-        detail: `桌面版提供 ${licenseStatus?.trialDays ?? 14} 天免费试用与 30 次导出额度。`,
+        title: t('license.webTitle'),
+        detail: t('license.webDetail', { days: licenseStatus?.trialDays ?? 14 }),
       };
     }
     if (licenseLoading && !licenseStatus) {
       return {
         tone: 'loading',
         icon: Loader2,
-        title: '正在读取激活状态…',
+        title: t('license.loadingTitle'),
         detail: '',
       };
     }
@@ -190,32 +201,35 @@ export function SettingsDialog() {
       return {
         tone: 'error',
         icon: AlertTriangle,
-        title: '无法读取激活状态',
-        detail: licenseError ?? '请重启应用后重试。',
+        title: t('license.errorTitle'),
+        detail: licenseError ?? t('license.errorFallback'),
       };
     }
     if (licenseStatus.activated) {
       return {
         tone: 'active',
         icon: CheckCircle2,
-        title: '已激活 · 永久有效',
-        detail: '感谢支持，导出次数不受限制。',
+        title: t('license.activeTitle'),
+        detail: t('license.activeDetail'),
       };
     }
     if (trialBlocked) {
       return {
         tone: 'blocked',
         icon: AlertTriangle,
-        title: '免费试用已结束',
-        detail: '激活后解锁无限次导出。',
+        title: t('license.blockedTitle'),
+        detail: t('license.blockedDetail'),
       };
     }
     const until = formatLicenseDate(licenseStatus.trialExpiresAt);
     return {
       tone: 'trial',
       icon: KeyRound,
-      title: `免费试用中 · 剩余 ${remainingCount} 次`,
-      detail: `${until ? `试用期至 ${until} · ` : ''}剩余 ${remainingDays} 天，激活后永久无限使用。`,
+      title: t('license.trialTitle', { count: remainingCount }),
+      detail: `${until ? t('license.trialUntil', { date: until }) : ''}${t(
+        'license.trialDetail',
+        { days: remainingDays },
+      )}`,
     };
   })();
 
@@ -236,15 +250,15 @@ export function SettingsDialog() {
       >
         <header className="settings-head">
           <div className="settings-heading">
-            <span className="settings-eyebrow">偏好设置</span>
-            <h2 id="settings-title">设置</h2>
+            <span className="settings-eyebrow">{t('settings.eyebrow')}</span>
+            <h2 id="settings-title">{t('settings.title')}</h2>
           </div>
           <button
             type="button"
             className="icon-btn"
             onClick={() => setSettingsOpen(false)}
-            title="关闭"
-            aria-label="关闭设置"
+            title={t('common.close')}
+            aria-label={t('settings.closeLabel')}
           >
             <X size={16} />
           </button>
@@ -253,10 +267,44 @@ export function SettingsDialog() {
         <div className="settings-body">
           <section className="settings-section">
             <div className="settings-section-head">
-              <Palette size={14} />
-              外观
+              <Languages size={14} />
+              {t('settings.language')}
             </div>
-            <div className="theme-options" role="radiogroup" aria-label="主题模式">
+            <div
+              className="language-options"
+              role="radiogroup"
+              aria-label={t('settings.language')}
+            >
+              {LANGUAGES.map((item) => {
+                const active = language === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    className={`language-option ${active ? 'is-active' : ''}`}
+                    onClick={() => setLanguage(item.id)}
+                  >
+                    {item.label}
+                    {active && <Check size={13} className="language-check" />}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="settings-hint">{t('settings.languageHint')}</p>
+          </section>
+
+          <section className="settings-section">
+            <div className="settings-section-head">
+              <Palette size={14} />
+              {t('settings.appearance')}
+            </div>
+            <div
+              className="theme-options"
+              role="radiogroup"
+              aria-label={t('settings.themeAria')}
+            >
               {THEME_OPTIONS.map((option) => {
                 const Icon = option.icon;
                 const active = theme === option.id;
@@ -289,113 +337,112 @@ export function SettingsDialog() {
                     <span className="theme-option-meta">
                       <span className="theme-option-label">
                         <Icon size={13} />
-                        {option.label}
+                        {t(option.labelKey)}
                         {active && <Check size={13} className="theme-check" />}
                       </span>
-                      <span className="theme-option-hint">{option.hint}</span>
+                      <span className="theme-option-hint">{t(option.hintKey)}</span>
                     </span>
                   </button>
                 );
               })}
             </div>
-            <p className="settings-hint">主题会立即应用，并随其它设置一起保存在本地。</p>
+            <p className="settings-hint">{t('settings.themeNote')}</p>
           </section>
 
           {desktop && (
             <section className="settings-section">
               <div className="settings-section-head">
                 <KeyRound size={14} />
-                激活
+                {t('settings.activation')}
               </div>
 
-            <div className={`license-status is-${licenseView.tone}`}>
-              <LicenseIcon
-                size={15}
-                className={licenseView.tone === 'loading' ? 'spin' : undefined}
-              />
-              <div className="license-status-text">
-                <strong>{licenseView.title}</strong>
-                {licenseView.detail && <span>{licenseView.detail}</span>}
-              </div>
-            </div>
-
-            {desktop && licenseStatus && (
-              <>
-                <div className="license-fp">
-                  <span className="license-fp-label">机器指纹</span>
-                  <div className="license-fp-row">
-                    <code className="license-fp-code">
-                      {formatFingerprint(licenseStatus.machineFingerprint)}
-                    </code>
-                    <button
-                      type="button"
-                      className="btn btn-ghost"
-                      onClick={() => void copyFingerprint()}
-                      title="复制机器指纹"
-                    >
-                      {copied ? <Check size={13} /> : <Copy size={13} />}
-                      {copied ? '已复制' : '复制'}
-                    </button>
-                  </div>
-                  <p className="license-hint">
-                    <a
-                      className="license-link"
-                      href="https://ifdian.net/a/nico2026"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      激活码
-                    </a>
-                    仅对本机有效。
-                  </p>
+              <div className={`license-status is-${licenseView.tone}`}>
+                <LicenseIcon
+                  size={15}
+                  className={licenseView.tone === 'loading' ? 'spin' : undefined}
+                />
+                <div className="license-status-text">
+                  <strong>{licenseView.title}</strong>
+                  {licenseView.detail && <span>{licenseView.detail}</span>}
                 </div>
+              </div>
 
-                {!licenseStatus.activated && (
-                  <div className="license-form">
-                    <input
-                      className="license-input"
-                      value={code}
-                      onChange={(event) => setCode(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') void onActivate();
-                      }}
-                      placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
-                      aria-label="激活码"
-                      autoComplete="off"
-                      spellCheck={false}
-                      disabled={activating}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      onClick={() => void onActivate()}
-                      disabled={!code.trim() || activating}
-                    >
-                      {activating ? (
-                        <Loader2 size={13} className="spin" />
-                      ) : (
-                        <KeyRound size={13} />
-                      )}
-                      {activating ? '激活中…' : '激活'}
-                    </button>
+              {desktop && licenseStatus && (
+                <>
+                  <div className="license-fp">
+                    <span className="license-fp-label">{t('license.fingerprint')}</span>
+                    <div className="license-fp-row">
+                      <code className="license-fp-code">
+                        {formatFingerprint(licenseStatus.machineFingerprint)}
+                      </code>
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        onClick={() => void copyFingerprint()}
+                        title={t('license.copyFingerprint')}
+                      >
+                        {copied ? <Check size={13} /> : <Copy size={13} />}
+                        {copied ? t('common.copied') : t('common.copy')}
+                      </button>
+                    </div>
+                    <p className="license-hint">
+                      <a
+                        className="license-link"
+                        href="https://ifdian.net/a/nico2026"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {t('license.activationCode')}
+                      </a>
+                      {t('license.localOnly')}
+                    </p>
                   </div>
-                )}
 
-                {licenseMessage && (
-                  <p className={`license-note is-${licenseMessage.tone}`}>
-                    {licenseMessage.text}
-                  </p>
-                )}
-              </>
-            )}
+                  {!licenseStatus.activated && (
+                    <div className="license-form">
+                      <input
+                        className="license-input"
+                        value={code}
+                        onChange={(event) => setCode(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') void onActivate();
+                        }}
+                        placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+                        aria-label={t('license.codeAria')}
+                        autoComplete="off"
+                        spellCheck={false}
+                        disabled={activating}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => void onActivate()}
+                        disabled={!code.trim() || activating}
+                      >
+                        {activating ? (
+                          <Loader2 size={13} className="spin" />
+                        ) : (
+                          <KeyRound size={13} />
+                        )}
+                        {activating ? t('license.activating') : t('license.activate')}
+                      </button>
+                    </div>
+                  )}
 
+                  {licenseMessage && (
+                    <p className={`license-note is-${licenseMessage.tone}`}>
+                      {licenseMessage.text}
+                    </p>
+                  )}
+                </>
+              )}
             </section>
           )}
 
           <section className="settings-section">
             <div className="settings-section-head">
               <BarChart3 size={14} />
-              隐私
+              {t('settings.privacy')}
             </div>
             <button
               type="button"
@@ -406,28 +453,24 @@ export function SettingsDialog() {
               disabled={analyticsEnabled === null || analyticsSaving}
             >
               <span className="settings-switch-text">
-                <strong>匿名使用统计</strong>
+                <strong>{t('settings.analytics')}</strong>
                 <small>
                   {desktop
-                    ? '仅上报功能使用与导出结果，不包含字帖内容、姓名、机器指纹或激活码。'
-                    : '仅统计打印或下载事件，不包含字帖内容或个人信息。'}
+                    ? t('settings.analyticsDesktopHint')
+                    : t('settings.analyticsWebHint')}
                 </small>
               </span>
               <span className="settings-switch-track" aria-hidden="true">
                 <span className="settings-switch-thumb" />
               </span>
             </button>
-            {desktop && (
-              <p className="settings-hint">
-                统计通过 Aptabase 匿名发送，可在任何时候关闭。
-              </p>
-            )}
+            {desktop && <p className="settings-hint">{t('settings.analyticsNote')}</p>}
             <button
               type="button"
               className="text-button"
               onClick={() => setPrivacyOpen(true)}
             >
-              查看隐私政策
+              {t('settings.viewPrivacy')}
             </button>
           </section>
 
@@ -435,24 +478,22 @@ export function SettingsDialog() {
             <section className="settings-section">
               <div className="settings-section-head">
                 <Heart size={14} />
-                支持
+                {t('settings.support')}
               </div>
               <div className="support-card">
                 <div className="support-meta">
-                  <div className="support-title">赞助</div>
-                  <div className="support-desc">
-                    如果 Copycraft 帮到了你，欢迎在爱发电支持后续开发。
-                  </div>
+                  <div className="support-title">{t('settings.supportTitle')}</div>
+                  <div className="support-desc">{t('settings.supportDesc')}</div>
                 </div>
                 <a
                   className="support-afdian"
                   href="https://ifdian.net/a/nico2026"
                   target="_blank"
                   rel="noopener noreferrer"
-                  title="在爱发电支持 Copycraft"
+                  title={t('settings.afdianTitle')}
                 >
                   <span className="support-afdian-main">
-                    <Heart size={12} /> 爱发电
+                    <Heart size={12} /> {t('settings.afdian')}
                   </span>
                   <span className="support-afdian-brand">AFDIAN</span>
                 </a>
@@ -463,14 +504,18 @@ export function SettingsDialog() {
           <section className="settings-section">
             <div className="settings-section-head">
               <Info size={14} />
-              关于
+              {t('settings.about')}
             </div>
             <div className="about-card">
               <div className="about-meta">
-                <div className="about-name">Copycraft 字帖工坊</div>
+                <div className="about-name">{t('app.name')}</div>
                 <div className="about-version">
-                  版本 v{APP_VERSION} ·{' '}
-                  {window.desktop?.isElectron ? '桌面版' : '网页版'}
+                  {t('settings.version', {
+                    version: APP_VERSION,
+                    edition: desktop
+                      ? t('settings.desktopEdition')
+                      : t('settings.webEdition'),
+                  })}
                 </div>
               </div>
               <div className="about-actions">
@@ -478,17 +523,17 @@ export function SettingsDialog() {
                   type="button"
                   className="btn btn-ghost about-license"
                   onClick={() => setLicenseOpen(true)}
-                  title="查看 MIT 开源许可"
+                  title={t('settings.licenseTitle')}
                 >
                   <Scale size={13} />
-                  MIT 许可
+                  {t('settings.mitLicense')}
                 </button>
                 <a
                   className="btn btn-ghost about-github"
                   href={REPO_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  title="打开 GitHub 仓库"
+                  title={t('settings.githubTitle')}
                 >
                   <Github size={13} />
                   GitHub
@@ -505,7 +550,7 @@ export function SettingsDialog() {
                     ) : (
                       <RefreshCw size={13} />
                     )}
-                    {checking ? '检查中…' : '检查更新'}
+                    {checking ? t('settings.checking') : t('settings.checkUpdates')}
                   </button>
                 )}
               </div>
@@ -516,27 +561,33 @@ export function SettingsDialog() {
                 {update.phase === 'available' && (
                   <button type="button" className="update-banner" onClick={openRelease}>
                     <span>
-                      <strong>发现新版本 v{update.latest}</strong>
-                      <small>前往 GitHub Releases 下载安装包</small>
+                      <strong>
+                        {t('settings.updateAvailable', { version: update.latest ?? '' })}
+                      </strong>
+                      <small>{t('settings.updateHint')}</small>
                     </span>
                     <ArrowUpRight size={15} />
                   </button>
                 )}
                 {update.phase === 'latest' && (
                   <div className="update-note is-ok">
-                    <Check size={13} /> 已是最新版本 v{APP_VERSION}
+                    <Check size={13} />{' '}
+                    {t('settings.upToDate', { version: APP_VERSION })}
                   </div>
                 )}
                 {update.phase === 'error' && (
                   <div className="update-note is-error">
-                    <Info size={13} /> 检查更新失败：{update.message ?? '未知错误'}
+                    <Info size={13} />{' '}
+                    {t('settings.updateFailed', {
+                      error: update.message ?? t('common.unknownError'),
+                    })}
                   </div>
                 )}
               </>
             )}
 
             <p className="settings-hint">
-              <ShieldCheck size={12} /> 字帖内容全部在本地生成，不会上传；匿名统计不包含字帖内容、姓名、机器指纹或激活码。
+              <ShieldCheck size={12} /> {t('settings.localNote')}
             </p>
           </section>
         </div>

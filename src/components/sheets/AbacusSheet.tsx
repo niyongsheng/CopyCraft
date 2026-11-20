@@ -1,3 +1,4 @@
+import { useT } from '../../i18n/useT';
 import { fontStack } from '../../lib/fonts';
 import type { AbacusModel } from '../../lib/model';
 import type { SheetSettings } from '../../types';
@@ -13,6 +14,7 @@ export function AbacusSheet({
   settings: SheetSettings;
   title: string;
 }) {
+  const t = useT();
   const font = fontStack(settings.fontId);
 
   return (
@@ -87,7 +89,7 @@ export function AbacusSheet({
                         className="abacus-caption"
                         style={{ color: settings.traceColor }}
                       >
-                        看数拨珠
+                        {t('abacus.drawCaption')}
                       </span>
                     )}
                   </>

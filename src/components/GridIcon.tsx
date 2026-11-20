@@ -1,3 +1,5 @@
+import { GRID_STYLE_KEYS } from '../i18n';
+import { useT } from '../i18n/useT';
 import { GRID_STYLES } from '../lib/constants';
 import { gridGeometry } from '../lib/grid';
 import type { GridStyleId } from '../types';
@@ -73,14 +75,15 @@ export function GridStylePicker({
   value: GridStyleId;
   onChange: (value: GridStyleId) => void;
 }) {
+  const t = useT();
   return (
     <div className="grid-picker">
       {GRID_STYLES.map((style) => (
         <button
           key={style.id}
           type="button"
-          title={style.label}
-          aria-label={style.label}
+          title={t(GRID_STYLE_KEYS[style.id])}
+          aria-label={t(GRID_STYLE_KEYS[style.id])}
           className={`grid-picker-item ${value === style.id ? 'is-active' : ''}`}
           onClick={() => onChange(style.id)}
         >

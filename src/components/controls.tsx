@@ -1,27 +1,26 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useT } from '../i18n/useT';
 
 export function Section({
   label,
   children,
-  className = '',
   icon,
   defaultOpen = true,
 }: {
   label?: string;
   children: ReactNode;
-  className?: string;
   icon?: ReactNode;
   defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
   if (!label) {
-    return <section className={`settings-card ${className}`}>{children}</section>;
+    return <section className="settings-card">{children}</section>;
   }
 
   return (
-    <section className={`settings-card ${open ? 'is-open' : 'is-collapsed'} ${className}`}>
+    <section className={`settings-card ${open ? 'is-open' : 'is-collapsed'}`}>
       <button
         type="button"
         className="card-header"
@@ -51,7 +50,6 @@ export function SliderRow({
   step = 1,
   unit = '',
   onChange,
-  format,
 }: {
   label: string;
   value: number;
@@ -60,10 +58,10 @@ export function SliderRow({
   step?: number;
   unit?: string;
   onChange: (value: number) => void;
-  format?: (value: number) => string;
 }) {
+  const t = useT();
   const pct = ((value - min) / (max - min)) * 100;
-  const display = format ? format(value) : `${value}${unit}`;
+  const display = `${value}${unit}`;
   return (
     <div className="control-row slider-row">
       <span className="control-label">{label}</span>
@@ -84,14 +82,14 @@ export function SliderRow({
         <span className="stepper-buttons">
           <button
             type="button"
-            aria-label={`增加${label}`}
+            aria-label={t('common.increase', { label })}
             onClick={() => onChange(Math.min(max, value + step))}
           >
             <ChevronUp size={11} strokeWidth={2.4} />
           </button>
           <button
             type="button"
-            aria-label={`减少${label}`}
+            aria-label={t('common.decrease', { label })}
             onClick={() => onChange(Math.max(min, value - step))}
           >
             <ChevronDown size={11} strokeWidth={2.4} />
@@ -108,14 +106,12 @@ export function SelectRow<T extends string | number>({
   options,
   groups,
   onChange,
-  icon,
 }: {
   label: string;
   value: T;
   options?: { value: T; label: string }[];
   groups?: { label: string; options: { value: T; label: string }[] }[];
   onChange: (value: T) => void;
-  icon?: ReactNode;
 }) {
   const choices = groups ? groups.flatMap((group) => group.options) : (options ?? []);
   const renderOption = (option: { value: T; label: string }) => (
@@ -126,10 +122,7 @@ export function SelectRow<T extends string | number>({
 
   return (
     <div className="control-row select-row">
-      <span className="control-label">
-        {icon}
-        {label}
-      </span>
+      <span className="control-label">{label}</span>
       <div className="select-wrap">
         <select
           value={String(value)}
@@ -237,29 +230,3 @@ export function TextRow({
     </div>
   );
 }
-
-export function SelectPill<T extends string>({
-  value,
-  options,
-  onChange,
-}: {
-  value: T;
-  options: { value: T; label: string }[];
-  onChange: (value: T) => void;
-}) {
-  return (
-    <div className="select-pill">
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          className={o.value === value ? 'is-active' : ''}
-          onClick={() => onChange(o.value)}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-

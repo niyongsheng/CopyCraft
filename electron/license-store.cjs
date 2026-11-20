@@ -19,6 +19,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const core = require('./license-core.cjs');
+const { t } = require('./i18n.cjs');
 
 /** 免费试用时长（天）。未激活用户自首次启动起算。 */
 const TRIAL_DURATION_DAYS = 14;
@@ -173,11 +174,11 @@ class LicenseStore {
     } catch (error) {
       throw new core.LicenseError(
         'invalid_format',
-        `激活码格式不正确：${error.message}`,
+        t('license.invalidFormat', { error: error.message }),
       );
     }
     if (!core.constantTimeEq(code, core.codeFor(this.fingerprint))) {
-      throw new core.LicenseError('invalid_code', '激活码无效，请核对后重试');
+      throw new core.LicenseError('invalid_code', t('license.invalidCode'));
     }
     state.activationCode = code;
     state.activatedAt = this.now();

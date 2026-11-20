@@ -343,6 +343,42 @@
   box-shadow: 0 0 0 3px rgba(16, 95, 255, 0.15);
 }
 
+.language-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+}
+
+.language-option {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--card-bg);
+  color: var(--text-2);
+  font-size: 13px;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.language-option:hover {
+  border-color: var(--border-strong);
+}
+
+.language-option.is-active {
+  border-color: rgba(16, 95, 255, 0.68);
+  box-shadow: 0 0 0 3px rgba(16, 95, 255, 0.15);
+  color: var(--text);
+}
+
+.language-check {
+  color: #105fff;
+  flex: none;
+}
+
 .theme-preview {
   height: 96px;
   display: flex;

@@ -1,3 +1,4 @@
+import type { I18nKey } from '../i18n';
 import type { SheetSettings, SheetType } from '../types';
 import { GRADE_PRESETS, GRADE_WORKBOOK_PRESETS } from './gradePresets';
 
@@ -59,15 +60,15 @@ export type Preset = SheetPreset | WorkbookPreset;
 
 export const PRESET_CATEGORIES: {
   id: PresetCategory;
-  label: string;
-  hint: string;
+  labelKey: I18nKey;
+  hintKey: I18nKey;
 }[] = [
-  { id: 'textbook', label: '课本同步', hint: '按生字难度整理的描红内容' },
-  { id: 'structure', label: '结构规律', hint: '按结构类型分组，先懂规则再动笔' },
-  { id: 'radical', label: '偏旁部首', hint: '同偏旁集中练，举一反三' },
-  { id: 'words', label: '生字组词', hint: '生字和词语一起练' },
-  { id: 'poem', label: '古诗词', hint: '公版诗词，支持拼音、竖排和注释' },
-  { id: 'workbook', label: '练习册', hint: '多张字帖合成一本，直接导出' },
+  { id: 'textbook', labelKey: 'category.textbook.label', hintKey: 'category.textbook.hint' },
+  { id: 'structure', labelKey: 'category.structure.label', hintKey: 'category.structure.hint' },
+  { id: 'radical', labelKey: 'category.radical.label', hintKey: 'category.radical.hint' },
+  { id: 'words', labelKey: 'category.words.label', hintKey: 'category.words.hint' },
+  { id: 'poem', labelKey: 'category.poem.label', hintKey: 'category.poem.hint' },
+  { id: 'workbook', labelKey: 'category.workbook.label', hintKey: 'category.workbook.hint' },
 ];
 
 const chars = (...items: string[]) => items.join('\n');

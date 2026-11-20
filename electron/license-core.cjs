@@ -14,6 +14,7 @@
  */
 
 const crypto = require('node:crypto');
+const { t } = require('./i18n.cjs');
 
 /**
  * 产品密钥。不要把生产密钥提交到仓库。
@@ -130,19 +131,19 @@ function signShadow(fingerprint, used, startedAt) {
  */
 function normalizeToken(raw) {
   if (typeof raw !== 'string' || raw.trim() === '') {
-    throw new Error('不能为空');
+    throw new Error(t('license.empty'));
   }
   let out = '';
   for (const ch of raw.toUpperCase()) {
     if (ch === '-' || ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r') continue;
     const mapped = ch === 'O' ? '0' : ch === 'I' || ch === 'L' ? '1' : ch === 'U' ? 'V' : ch;
     if (!CROCKFORD_ALPHABET.includes(mapped)) {
-      throw new Error(`包含非法字符 "${ch}"`);
+      throw new Error(t('license.illegalChar', { char: ch }));
     }
     out += mapped;
   }
   if (out.length !== FINGERPRINT_CHARS) {
-    throw new Error(`长度应为 ${FINGERPRINT_CHARS} 个字符`);
+    throw new Error(t('license.length', { count: FINGERPRINT_CHARS }));
   }
   return out;
 }

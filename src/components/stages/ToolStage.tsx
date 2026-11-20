@@ -1,5 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Loader2, SlidersHorizontal } from 'lucide-react';
+import { TOOL_LABEL_KEYS } from '../../i18n';
+import { useT } from '../../i18n/useT';
 import { TOOL_BY_ID } from '../../lib/constants';
 import { useApp } from '../../store/useApp';
 
@@ -8,6 +10,7 @@ const StrokeQuery = lazy(() =>
 );
 
 export function ToolStage({ active }: { active: boolean }) {
+  const t = useT();
   const activeTool = useApp((s) => s.activeTool);
   const tool = TOOL_BY_ID[activeTool ?? 'strokeQuery'];
   const showInspector = useApp((s) => s.showInspector);
@@ -18,8 +21,8 @@ export function ToolStage({ active }: { active: boolean }) {
       <div className="stage-toolbar">
         <div className="stage-title">
           <div className="stage-heading">
-            <span className="stage-eyebrow">工具</span>
-            <span className="stage-name">{tool.label}</span>
+            <span className="stage-eyebrow">{t('stage.tool')}</span>
+            <span className="stage-name">{t(TOOL_LABEL_KEYS[tool.id])}</span>
           </div>
         </div>
 
@@ -27,8 +30,8 @@ export function ToolStage({ active }: { active: boolean }) {
           <button
             type="button"
             className={`icon-btn stage-inspector-btn ${showInspector ? 'is-on' : ''}`}
-            title="设置"
-            aria-label="切换设置面板"
+            title={t('common.settings')}
+            aria-label={t('stage.toggleInspector')}
             onClick={toggleInspector}
           >
             <SlidersHorizontal size={15} />
@@ -41,7 +44,7 @@ export function ToolStage({ active }: { active: boolean }) {
           fallback={
             <div className="stage-loading">
               <Loader2 size={16} className="spin" />
-              正在加载笔顺查询…
+              {t('stage.toolLoading')}
             </div>
           }
         >

@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { tGlobal } from '../i18n';
+import { isDesktop } from '../lib/platform';
 import type {
   LicenseActivateResult,
   LicenseCheckResult,
@@ -23,7 +25,7 @@ interface LicenseState {
 const DAY_SECS = 86400;
 
 export function isDesktopLicense(): boolean {
-  return Boolean(window.desktop?.isElectron);
+  return isDesktop();
 }
 
 export const useLicense = create<LicenseState>()((set) => ({
@@ -43,7 +45,7 @@ export const useLicense = create<LicenseState>()((set) => ({
       if (result.ok && result.status) {
         set({ status: result.status, error: null });
       } else {
-        set({ error: result.error ?? '无法读取激活状态' });
+        set({ error: result.error ?? tGlobal('license.errorTitle') });
       }
     } catch (error) {
       set({ error: error instanceof Error ? error.message : String(error) });
@@ -65,7 +67,7 @@ export const useLicense = create<LicenseState>()((set) => ({
   activate: async (code) => {
     const desktop = window.desktop;
     if (!desktop?.isElectron) {
-      return { ok: false, error: '网页版无需激活' };
+      return { ok: false, error: tGlobal('license.webTitle') };
     }
     const result = await desktop.licenseActivate(code);
     if (result.ok && result.status) {

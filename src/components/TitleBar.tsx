@@ -6,25 +6,30 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import appIcon from '../assets/app-icon.png';
+import { useT } from '../i18n/useT';
+import { isDesktop } from '../lib/platform';
 import { RELEASES_URL } from '../lib/updates';
 import { useApp } from '../store/useApp';
 
 export function TitleBar() {
+  const t = useT();
   const showSidebar = useApp((s) => s.showSidebar);
   const showInspector = useApp((s) => s.showInspector);
   const toggleSidebar = useApp((s) => s.toggleSidebar);
   const toggleInspector = useApp((s) => s.toggleInspector);
   const setSettingsOpen = useApp((s) => s.setSettingsOpen);
   const setPresetOpen = useApp((s) => s.setPresetOpen);
-  const desktop = Boolean(window.desktop?.isElectron);
+  const desktop = isDesktop();
 
   return (
     <header className="titlebar">
       <div className="brand">
         <img className="brand-mark" src={appIcon} alt="" aria-hidden="true" />
         <span className="brand-name">Copycraft</span>
-        <span className="brand-sub">字帖工坊</span>
-        <span className="brand-badge">{desktop ? 'DESKTOP' : 'WEB'}</span>
+        <span className="brand-sub">{t('app.brandSub')}</span>
+        <span className="brand-badge">
+          {desktop ? t('app.desktop') : t('app.web')}
+        </span>
       </div>
 
       <div className="titlebar-spacer" />
@@ -33,8 +38,8 @@ export function TitleBar() {
         <button
           type="button"
           className={`icon-btn ${showSidebar ? 'is-on' : ''}`}
-          title={showSidebar ? '隐藏字帖列表' : '显示字帖列表'}
-          aria-label="切换字帖列表"
+          title={showSidebar ? t('titlebar.hideSidebar') : t('titlebar.showSidebar')}
+          aria-label={t('titlebar.toggleSidebar')}
           onClick={toggleSidebar}
         >
           <PanelLeft size={15} />
@@ -42,8 +47,8 @@ export function TitleBar() {
         <button
           type="button"
           className={`icon-btn ${showInspector ? 'is-on' : ''}`}
-          title={showInspector ? '隐藏设置面板' : '显示设置面板'}
-          aria-label="切换设置面板"
+          title={showInspector ? t('titlebar.hideInspector') : t('titlebar.showInspector')}
+          aria-label={t('titlebar.toggleInspector')}
           onClick={toggleInspector}
         >
           <SlidersHorizontal size={15} />
@@ -52,8 +57,8 @@ export function TitleBar() {
           <button
             type="button"
             className="icon-btn titlebar-preset"
-            title="模板库 / 课本同步"
-            aria-label="打开模板库"
+            title={t('titlebar.presetLibrary')}
+            aria-label={t('titlebar.openPresetLibrary')}
             onClick={() => setPresetOpen(true)}
           >
             <LibraryBig size={15} />
@@ -64,8 +69,8 @@ export function TitleBar() {
             href={RELEASES_URL}
             target="_blank"
             rel="noopener noreferrer"
-            title="下载桌面端"
-            aria-label="下载桌面端"
+            title={t('titlebar.downloadDesktop')}
+            aria-label={t('titlebar.downloadDesktop')}
           >
             <Download size={15} />
           </a>
@@ -74,8 +79,8 @@ export function TitleBar() {
         <button
           type="button"
           className="icon-btn"
-          title="设置"
-          aria-label="打开设置"
+          title={t('common.settings')}
+          aria-label={t('titlebar.openSettings')}
           onClick={() => setSettingsOpen(true)}
         >
           <Settings size={15} />

@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
-import { captureSheetPages } from './exportPages';
+import { tGlobal } from '../i18n';
+import { capturePageDataUrls } from './exportPages';
 
 const A4_WIDTH_MM = 210;
 const A4_HEIGHT_MM = 297;
@@ -10,7 +11,7 @@ const A4_HEIGHT_MM = 297;
  * opening the browser print dialog.
  */
 export async function createPdfFromPages(): Promise<{ blob: Blob; pages: number }> {
-  const captured = await captureSheetPages();
+  const pages = await capturePageDataUrls();
   const pdf = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -19,14 +20,14 @@ export async function createPdfFromPages(): Promise<{ blob: Blob; pages: number 
   });
 
   pdf.setProperties({
-    title: 'Copycraft 字帖工坊',
+    title: tGlobal('app.name'),
     creator: 'Copycraft',
   });
 
-  captured.forEach((page, index) => {
+  pages.forEach((dataUrl, index) => {
     if (index > 0) pdf.addPage();
     pdf.addImage(
-      page.dataUrl,
+      dataUrl,
       'PNG',
       0,
       0,
@@ -37,5 +38,5 @@ export async function createPdfFromPages(): Promise<{ blob: Blob; pages: number 
     );
   });
 
-  return { blob: pdf.output('blob'), pages: captured.length };
+  return { blob: pdf.output('blob'), pages: pages.length };
 }

@@ -5,6 +5,8 @@ import { SettingsDialog } from './components/SettingsDialog';
 import { Sidebar } from './components/Sidebar';
 import { Stage } from './components/Stage';
 import { TitleBar } from './components/TitleBar';
+import { setActiveLanguage } from './i18n';
+import { useT } from './i18n/useT';
 import { initAnalytics, track } from './lib/analytics';
 import { isWorkbookPreset, presetById } from './lib/presets';
 import { isNarrowViewport } from './lib/viewport';
@@ -17,6 +19,8 @@ const THEME_COLOR: Record<string, string> = {
 };
 
 export default function App() {
+  const t = useT();
+  const language = useApp((s) => s.language);
   const showSidebar = useApp((s) => s.showSidebar);
   const showInspector = useApp((s) => s.showInspector);
   const setSidebar = useApp((s) => s.setSidebar);
@@ -99,6 +103,18 @@ export default function App() {
       });
     }
   }, [theme]);
+
+  useEffect(() => {
+    setActiveLanguage(language);
+    document.documentElement.lang = language;
+    document.title = t('app.name');
+    const bridge = window.desktop;
+    if (bridge?.setLanguage) {
+      void bridge.setLanguage(language).catch(() => {
+        /* older shells may not expose language sync */
+      });
+    }
+  }, [language, t]);
 
   useEffect(() => {
     if (isNarrowViewport()) {

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type HanziWriterType from 'hanzi-writer';
 import { Eraser, Loader2, Play, RotateCcw, Sparkles } from 'lucide-react';
+import { useT } from '../i18n/useT';
 import { gridTile } from '../lib/grid';
 import { loadCharData } from '../lib/hanziData';
 import { isHan, pinyinOf } from '../lib/pinyin';
@@ -8,12 +9,13 @@ import { isHan, pinyinOf } from '../lib/pinyin';
 type Mode = 'play' | 'quiz';
 
 export function StrokeQuery() {
+  const t = useT();
   const [input, setInput] = useState('永');
   const [writer, setWriter] = useState<HanziWriterType | null>(null);
   const [strokeCount, setStrokeCount] = useState<number | null>(null);
   const [strokeIndex, setStrokeIndex] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(false);
   const [mode, setMode] = useState<Mode>('play');
   const [quizDone, setQuizDone] = useState(false);
   const targetRef = useRef<HTMLDivElement>(null);
@@ -58,7 +60,7 @@ export function StrokeQuery() {
         },
         onLoadCharDataError: () => {
           if (!cancelled) {
-            setError('笔顺数据加载失败，请检查网络后重试。');
+            setError(true);
             setLoading(false);
           }
         },
@@ -84,7 +86,7 @@ export function StrokeQuery() {
     setQuizDone(false);
     setStrokeIndex(0);
     setStrokeCount(null);
-    setError('');
+    setError(false);
     const request = ++requestRef.current;
 
     if (!char) {
@@ -178,14 +180,12 @@ export function StrokeQuery() {
     <div className="stroke-query">
       <div className="sq-panel">
         <div className="sq-side">
-          <div className="sq-eyebrow">笔顺查询</div>
-          <h2>查一查，怎么写</h2>
-          <p className="sq-desc">
-            输入一个汉字，查看标准笔顺动画，也可以直接描红练习。
-          </p>
+          <div className="sq-eyebrow">{t('stroke.eyebrow')}</div>
+          <h2>{t('stroke.title')}</h2>
+          <p className="sq-desc">{t('stroke.desc')}</p>
 
           <label className="sq-label" htmlFor="stroke-char">
-            汉字
+            {t('stroke.char')}
           </label>
           <div className="sq-input-wrap">
             <input
@@ -193,7 +193,7 @@ export function StrokeQuery() {
               className="sq-input"
               value={input}
               onChange={(e) => setInput(e.target.value.slice(0, 4))}
-              placeholder="输入汉字"
+              placeholder={t('stroke.inputPlaceholder')}
               autoComplete="off"
               spellCheck={false}
             />
@@ -202,33 +202,31 @@ export function StrokeQuery() {
 
           <div className="sq-meta">
             <span>
-              笔画
+              {t('stroke.strokes')}
               <strong>{strokeCount ?? '—'}</strong>
             </span>
-            <span className="sq-source">数据 hanzi-writer</span>
+            <span className="sq-source">{t('stroke.source')}</span>
           </div>
 
           <div className="sq-actions">
             <button type="button" className="btn btn-primary" onClick={play} disabled={!ready}>
-              <Play size={14} /> 播放笔顺
+              <Play size={14} /> {t('stroke.play')}
             </button>
             <button type="button" className="btn" onClick={step} disabled={!ready}>
-              <Sparkles size={14} /> 逐笔
+              <Sparkles size={14} /> {t('stroke.step')}
             </button>
             <button type="button" className="btn" onClick={quiz} disabled={!ready}>
-              <Eraser size={14} /> 描红练习
+              <Eraser size={14} /> {t('stroke.quiz')}
             </button>
             <button type="button" className="btn btn-ghost" onClick={reset} disabled={!ready}>
-              <RotateCcw size={14} /> 重置
+              <RotateCcw size={14} /> {t('stroke.reset')}
             </button>
           </div>
 
-          {quizDone && <div className="sq-success">写得很棒！笔顺全部正确。</div>}
-          {error && <div className="sq-error">{error}</div>}
+          {quizDone && <div className="sq-success">{t('stroke.success')}</div>}
+          {error && <div className="sq-error">{t('stroke.loadError')}</div>}
 
-          <p className="sq-hint">
-            提示：播放模式下可以观察每一笔的起笔与收笔；描红模式会在你描写错误时给出提示。
-          </p>
+          <p className="sq-hint">{t('stroke.hint')}</p>
         </div>
 
         <div className="sq-stage">
@@ -237,12 +235,14 @@ export function StrokeQuery() {
             <div ref={targetRef} className="sq-writer" />
             {loading && (
               <div className="sq-status">
-                <Loader2 size={16} className="spin" /> 正在加载笔顺…
+                <Loader2 size={16} className="spin" /> {t('stroke.loading')}
               </div>
             )}
-            {!char && !loading && <div className="sq-status">请输入一个汉字</div>}
+            {!char && !loading && (
+              <div className="sq-status">{t('stroke.enterChar')}</div>
+            )}
             {mode === 'quiz' && !loading && writer && (
-              <div className="sq-mode-tag">描红模式</div>
+              <div className="sq-mode-tag">{t('stroke.quizMode')}</div>
             )}
           </div>
         </div>

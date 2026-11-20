@@ -1,5 +1,6 @@
 import { Document, ImageRun, Packer, Paragraph } from 'docx';
-import { captureSheetPages } from './exportPages';
+import { tGlobal } from '../i18n';
+import { capturePageBlobs } from './exportPages';
 
 const A4_WIDTH_TWIPS = 11906;
 const A4_HEIGHT_TWIPS = 16838;
@@ -9,15 +10,15 @@ const A4_HEIGHT_TWIPS = 16838;
  * document. Images are used so the printed layout is identical to the preview.
  */
 export async function createDocxFromPages(): Promise<{ blob: Blob; pages: number }> {
-  const captured = await captureSheetPages();
+  const blobs = await capturePageBlobs();
   const images = await Promise.all(
-    captured.map(async (page) => new Uint8Array(await page.blob.arrayBuffer())),
+    blobs.map(async (blob) => new Uint8Array(await blob.arrayBuffer())),
   );
 
   const doc = new Document({
     creator: 'Copycraft',
-    title: 'Copycraft 字帖工坊',
-    description: 'Copycraft 字帖工坊导出的字帖',
+    title: tGlobal('app.name'),
+    description: `${tGlobal('app.name')} — ${tGlobal('export.worksheetWord')}`,
     sections: [
       {
         properties: {

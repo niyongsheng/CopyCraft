@@ -1,5 +1,9 @@
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { persist, type PersistStorage, type StorageValue } from 'zustand/middleware';
+import {
+  detectLanguage,
+  type Language,
+} from '../i18n';
 import {
   DEFAULT_CONTENT,
   SHEETS,
@@ -23,27 +27,35 @@ const initialContents = { ...DEFAULT_CONTENT } as Record<TextSheetType, string>;
 
 /*
  * The persisted slice holds every sheet's content, settings and title, so
- * serialising it on each keystroke or slider step is expensive. Batch the
- * localStorage writes instead.
+ * serialising it on each keystroke or slider step is expensive. Keep the last
+ * state object and only stringify + write it once per burst.
  */
-let pendingWrite: { name: string; value: string } | null = null;
+let pendingWrite: { name: string; value: StorageValue<PersistedAppState> } | null = null;
 let writeTimer: number | undefined;
 
 function flushPendingWrite() {
   window.clearTimeout(writeTimer);
   if (!pendingWrite) return;
-  localStorage.setItem(pendingWrite.name, pendingWrite.value);
+  localStorage.setItem(pendingWrite.name, JSON.stringify(pendingWrite.value));
   pendingWrite = null;
 }
 
-const batchedStorage = {
-  getItem: (name: string) => localStorage.getItem(name),
-  setItem: (name: string, value: string) => {
+const batchedStorage: PersistStorage<PersistedAppState> = {
+  getItem: (name) => {
+    const raw = localStorage.getItem(name);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as StorageValue<PersistedAppState>;
+    } catch {
+      return null;
+    }
+  },
+  setItem: (name, value) => {
     pendingWrite = { name, value };
     window.clearTimeout(writeTimer);
     writeTimer = window.setTimeout(flushPendingWrite, 300);
   },
-  removeItem: (name: string) => {
+  removeItem: (name) => {
     pendingWrite = null;
     window.clearTimeout(writeTimer);
     localStorage.removeItem(name);
@@ -65,6 +77,7 @@ interface AppState {
   showInspector: boolean;
   showSidebar: boolean;
   theme: ThemeMode;
+  language: Language;
   settingsOpen: boolean;
   /** 模板库弹窗；不持久化。 */
   presetOpen: boolean;
@@ -81,6 +94,7 @@ interface AppState {
   toggleInspector: () => void;
   toggleSidebar: () => void;
   setTheme: (theme: ThemeMode) => void;
+  setLanguage: (language: Language) => void;
   setSettingsOpen: (open: boolean) => void;
   setPresetOpen: (open: boolean) => void;
   applyPreset: (preset: SheetPreset) => void;
@@ -88,6 +102,18 @@ interface AppState {
   exitWorkbook: () => void;
   resetActive: () => void;
 }
+
+type PersistedAppState = Pick<
+  AppState,
+  | 'activeType'
+  | 'activeTool'
+  | 'settingsByType'
+  | 'titles'
+  | 'contents'
+  | 'seed'
+  | 'theme'
+  | 'language'
+>;
 
 export const useApp = create<AppState>()(
   persist(
@@ -101,6 +127,7 @@ export const useApp = create<AppState>()(
       showInspector: true,
       showSidebar: true,
       theme: 'dark',
+      language: detectLanguage(),
       settingsOpen: false,
       presetOpen: false,
       workbook: null,
@@ -154,6 +181,8 @@ export const useApp = create<AppState>()(
 
       setTheme: (theme) => set({ theme }),
 
+      setLanguage: (language) => set({ language }),
+
       setSettingsOpen: (open) => set({ settingsOpen: open }),
 
       setPresetOpen: (open) => set({ presetOpen: open }),
@@ -197,8 +226,8 @@ export const useApp = create<AppState>()(
     {
       name: 'copycraft',
       version: 3,
-      storage: createJSONStorage(() => batchedStorage),
-      migrate: (persisted, version) => {
+      storage: batchedStorage,
+      migrate: (persisted, version): PersistedAppState => {
         let state = persisted as {
           activeType?: string;
           contents?: Record<string, string>;
@@ -212,9 +241,9 @@ export const useApp = create<AppState>()(
             contents: { ...state.contents, name: '倪希米\n希米' },
           };
         }
-        return state;
+        return state as PersistedAppState;
       },
-      partialize: (state) => ({
+      partialize: (state): PersistedAppState => ({
         activeType: state.activeType,
         activeTool: state.activeTool,
         settingsByType: state.settingsByType,
@@ -222,6 +251,7 @@ export const useApp = create<AppState>()(
         contents: state.contents,
         seed: state.seed,
         theme: state.theme,
+        language: state.language,
       }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<AppState>;

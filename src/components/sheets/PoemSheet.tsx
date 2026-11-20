@@ -1,3 +1,4 @@
+import { useT } from '../../i18n/useT';
 import { fontStack } from '../../lib/fonts';
 import { gridTile, rowGridStyle } from '../../lib/grid';
 import type { PoemModel } from '../../lib/model';
@@ -14,6 +15,7 @@ export function PoemSheet({
   settings: SheetSettings;
   title: string;
 }) {
+  const t = useT();
   const font = fontStack(settings.fontId);
   const tile = {
     borderColor: settings.borderColor,
@@ -43,6 +45,7 @@ export function PoemSheet({
             return (
               <div
                 className="poem-column"
+                data-grid-tile=""
                 key={lineIndex}
                 style={{
                   width: model.cellSize,
@@ -78,6 +81,7 @@ export function PoemSheet({
             return (
               <div
                 className="poem-line"
+                data-grid-tile=""
                 key={lineIndex}
                 style={{
                   width: chars.length * model.cellSize,
@@ -128,7 +132,10 @@ export function PoemSheet({
           style={{ fontFamily: font, color: settings.inkColor }}
         >
           {model.notes.map((note, index) => (
-            <div key={index}>注：{note}</div>
+            <div key={index}>
+              {t('poem.notePrefix')}
+              {note}
+            </div>
           ))}
         </div>
       )}

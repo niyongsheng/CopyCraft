@@ -8,8 +8,14 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
+import {
+  GRADE_LABEL_KEYS,
+  SHEET_LABEL_KEYS,
+  type I18nKey,
+} from '../i18n';
+import { useT } from '../i18n/useT';
 import { track } from '../lib/analytics';
-import { SHEET_BY_ID } from '../lib/constants';
+import { copyText } from '../lib/clipboard';
 import {
   GRADE_ORDER,
   PRESET_CATEGORIES,
@@ -24,33 +30,13 @@ import { useApp } from '../store/useApp';
 
 type Filter = 'all' | PresetCategory;
 
-const FILTERS: { id: Filter; label: string; hint: string }[] = [
-  { id: 'all', label: '全部', hint: '所有可用模板' },
+const FILTERS: { id: Filter; labelKey: I18nKey; hintKey: I18nKey }[] = [
+  { id: 'all', labelKey: 'category.all.label', hintKey: 'category.all.hint' },
   ...PRESET_CATEGORIES,
 ];
 
-async function copyText(text: string): Promise<boolean> {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    try {
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = '0';
-      document.body.appendChild(textarea);
-      textarea.select();
-      const ok = document.execCommand('copy');
-      textarea.remove();
-      return ok;
-    } catch {
-      return false;
-    }
-  }
-}
-
 export function PresetDialog() {
+  const t = useT();
   const open = useApp((s) => s.presetOpen);
   const setPresetOpen = useApp((s) => s.setPresetOpen);
   const applyPreset = useApp((s) => s.applyPreset);
@@ -106,7 +92,7 @@ export function PresetDialog() {
         ...preset.tags,
         ...(isWorkbookPreset(preset)
           ? preset.sections.map((section) => section.title)
-          : [SHEET_BY_ID[preset.type].label]),
+          : [t(SHEET_LABEL_KEYS[preset.type])]),
       ]
         .join(' ')
         .toLowerCase();
@@ -124,7 +110,7 @@ export function PresetDialog() {
       });
     }
     return filtered;
-  }, [filter, grade, query]);
+  }, [filter, grade, query, t]);
 
   if (!open) return null;
 
@@ -140,6 +126,11 @@ export function PresetDialog() {
       setCopiedId(preset.id);
       track('preset_shared', { preset: preset.id, category: preset.category });
     }
+  };
+
+  const gradeLabel = (item: string) => {
+    const key = GRADE_LABEL_KEYS[item];
+    return key ? t(key) : item;
   };
 
   const activeFilter = FILTERS.find((item) => item.id === filter) ?? FILTERS[0];
@@ -159,24 +150,24 @@ export function PresetDialog() {
       >
         <header className="settings-head">
           <div className="settings-heading">
-            <span className="settings-eyebrow">模板库</span>
+            <span className="settings-eyebrow">{t('presets.eyebrow')}</span>
             <h2 id="preset-title">
-              <LibraryBig size={18} /> 课本同步与练习模板
+              <LibraryBig size={18} /> {t('presets.title')}
             </h2>
           </div>
           <button
             type="button"
             className="icon-btn"
             onClick={() => setPresetOpen(false)}
-            title="关闭"
-            aria-label="关闭模板库"
+            title={t('common.close')}
+            aria-label={t('presets.closeLabel')}
           >
             <X size={16} />
           </button>
         </header>
 
         <div className="preset-toolbar">
-          <div className="preset-tabs" role="tablist" aria-label="模板分类">
+          <div className="preset-tabs" role="tablist" aria-label={t('presets.tabsAria')}>
             {FILTERS.map((item) => (
               <button
                 key={item.id}
@@ -188,9 +179,9 @@ export function PresetDialog() {
                   setFilter(item.id);
                   setGrade('all');
                 }}
-                title={item.hint}
+                title={t(item.hintKey)}
               >
-                {item.label}
+                {t(item.labelKey)}
               </button>
             ))}
           </div>
@@ -200,21 +191,25 @@ export function PresetDialog() {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="搜索年级、单元或偏旁…"
-              aria-label="搜索模板"
+              placeholder={t('presets.searchPlaceholder')}
+              aria-label={t('presets.searchAria')}
             />
           </label>
         </div>
 
         <div className="preset-body">
           {availableGrades.length > 0 && (
-            <div className="preset-grade-row" role="group" aria-label="按年级筛选">
+            <div
+              className="preset-grade-row"
+              role="group"
+              aria-label={t('presets.gradeFilterAria')}
+            >
               <button
                 type="button"
                 className={`preset-grade ${grade === 'all' ? 'is-active' : ''}`}
                 onClick={() => setGrade('all')}
               >
-                全部年级
+                {t('presets.allGrades')}
               </button>
               {availableGrades.map((item) => (
                 <button
@@ -223,29 +218,34 @@ export function PresetDialog() {
                   className={`preset-grade ${grade === item ? 'is-active' : ''}`}
                   onClick={() => setGrade(item)}
                 >
-                  {item}
+                  {gradeLabel(item)}
                 </button>
               ))}
             </div>
           )}
           <div className="preset-category-hint">
             <Sparkles size={12} />
-            {activeFilter.hint} · 共 {presets.length} 个模板
+            {t('presets.summary', {
+              hint: t(activeFilter.hintKey),
+              count: presets.length,
+            })}
           </div>
 
           {presets.length === 0 ? (
-            <div className="preset-empty">没有匹配的模板，换个关键词试试。</div>
+            <div className="preset-empty">{t('presets.empty')}</div>
           ) : (
             <div className="preset-grid">
               {presets.map((preset) => {
                 const workbook = isWorkbookPreset(preset);
                 const typeLabel = workbook
-                  ? `${preset.sections.length} 张字帖`
-                  : SHEET_BY_ID[preset.type].label;
+                  ? t('presets.sheetCount', { count: preset.sections.length })
+                  : t(SHEET_LABEL_KEYS[preset.type]);
                 return (
                   <article className="preset-card" key={preset.id}>
                     <div className="preset-card-top">
-                      <span className="preset-badge">{preset.badge ?? activeFilter.label}</span>
+                      <span className="preset-badge">
+                        {preset.badge ?? t(activeFilter.labelKey)}
+                      </span>
                       <span className="preset-type">
                         {workbook ? <FileStack size={11} /> : null}
                         {typeLabel}
@@ -264,16 +264,16 @@ export function PresetDialog() {
                         className="btn btn-primary"
                         onClick={() => onUse(preset)}
                       >
-                        {workbook ? '生成练习册' : '套用模板'}
+                        {workbook ? t('presets.generateWorkbook') : t('presets.apply')}
                       </button>
                       <button
                         type="button"
                         className="btn btn-ghost"
                         onClick={() => void onCopy(preset)}
-                        title="复制分享链接"
+                        title={t('presets.copyLink')}
                       >
                         {copiedId === preset.id ? <Check size={13} /> : <Copy size={13} />}
-                        {copiedId === preset.id ? '已复制' : '分享链接'}
+                        {copiedId === preset.id ? t('common.copied') : t('presets.share')}
                       </button>
                     </div>
                   </article>
@@ -284,8 +284,10 @@ export function PresetDialog() {
         </div>
 
         <footer className="preset-footer">
-          <span>套用模板会覆盖对应字帖的内容与版式；分享链接只包含模板 ID。</span>
-          <span>{SHEET_PRESETS.length + WORKBOOK_PRESETS.length} 个内置模板</span>
+          <span>{t('presets.footnote')}</span>
+          <span>
+            {t('presets.builtin', { count: SHEET_PRESETS.length + WORKBOOK_PRESETS.length })}
+          </span>
         </footer>
       </div>
     </div>

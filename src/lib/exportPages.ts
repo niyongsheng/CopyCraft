@@ -1,4 +1,5 @@
 import html2canvas from 'html2canvas';
+import { tGlobal } from '../i18n';
 
 interface RestoreStyle {
   element: HTMLElement;
@@ -6,13 +7,6 @@ interface RestoreStyle {
   backgroundSize: string;
   backgroundRepeat: string;
   backgroundPosition: string;
-}
-
-export interface CapturedPage {
-  /** PNG blob, used by the Word exporter. */
-  blob: Blob;
-  /** PNG data URL, used by jsPDF. */
-  dataUrl: string;
 }
 
 /**
@@ -25,9 +19,7 @@ async function rasterizeGridBackgrounds(
 ): Promise<() => void> {
   const rows = pages.flatMap((page) =>
     Array.from(
-      page.querySelectorAll<HTMLElement>(
-        '.grid-row, .fourline-row, .poem-line, .poem-column',
-      ),
+      page.querySelectorAll<HTMLElement>('[data-grid-tile]'),
     ),
   );
   const tileCache = new Map<string, Promise<string>>();
@@ -100,15 +92,20 @@ async function rasterizeGridBackgrounds(
   };
 }
 
-/** Capture every A4 page as a high-resolution PNG. */
-export async function captureSheetPages(): Promise<CapturedPage[]> {
+/**
+ * Capture every A4 page as a high-resolution image, encoding each canvas with
+ * `encode` so callers only pay for the representation they need.
+ */
+async function capturePageImages<T>(
+  encode: (canvas: HTMLCanvasElement) => Promise<T>,
+): Promise<T[]> {
   await document.fonts.ready;
 
   const pageElements = Array.from(
     document.querySelectorAll<HTMLElement>('.sheet-page'),
   );
   if (pageElements.length === 0) {
-    throw new Error('当前视图没有可导出的字帖');
+    throw new Error(tGlobal('export.noPages'));
   }
 
   const pagesContainer = document.querySelector<HTMLElement>('.pages');
@@ -134,7 +131,7 @@ export async function captureSheetPages(): Promise<CapturedPage[]> {
   let restoreGrids: () => void = () => {};
   try {
     restoreGrids = await rasterizeGridBackgrounds(pageElements);
-    const pages: CapturedPage[] = [];
+    const pages: T[] = [];
     for (const page of pageElements) {
       const canvas = await html2canvas(page, {
         scale: 2,
@@ -142,13 +139,7 @@ export async function captureSheetPages(): Promise<CapturedPage[]> {
         useCORS: true,
         logging: false,
       });
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob(
-          (result) => (result ? resolve(result) : reject(new Error('页面渲染失败'))),
-          'image/png',
-        );
-      });
-      pages.push({ blob, dataUrl: canvas.toDataURL('image/png') });
+      pages.push(await encode(canvas));
     }
     return pages;
   } finally {
@@ -162,4 +153,23 @@ export async function captureSheetPages(): Promise<CapturedPage[]> {
       pagesContainer.classList.remove('is-exporting-pages');
     }
   }
+}
+
+/** PNG blobs, used by the Word exporter. */
+export function capturePageBlobs(): Promise<Blob[]> {
+  return capturePageImages(
+    (canvas) =>
+      new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+          (result) =>
+            result ? resolve(result) : reject(new Error(tGlobal('export.renderFailed'))),
+          'image/png',
+        );
+      }),
+  );
+}
+
+/** PNG data URLs, used by jsPDF. */
+export function capturePageDataUrls(): Promise<string[]> {
+  return capturePageImages(async (canvas) => canvas.toDataURL('image/png'));
 }

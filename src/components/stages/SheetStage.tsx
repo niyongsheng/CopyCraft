@@ -13,6 +13,8 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { useSheetModel } from '../../hooks/useSheetModel';
+import { SHEET_LABEL_KEYS, type I18nKey } from '../../i18n';
+import { useT } from '../../i18n/useT';
 import {
   PAGE_WIDTH,
   SHEET_BY_ID,
@@ -21,7 +23,8 @@ import {
 } from '../../lib/constants';
 import { track } from '../../lib/analytics';
 import { downloadBlob, exportFileName } from '../../lib/download';
-import { buildSheetModel } from '../../lib/model';
+import { buildSheetModel, pageCountOf } from '../../lib/model';
+import { isDesktop } from '../../lib/platform';
 import { useApp } from '../../store/useApp';
 import {
   selectTrialBlocked,
@@ -31,6 +34,7 @@ import {
 import { SheetView } from '../sheets/SheetView';
 
 export function SheetStage() {
+  const t = useT();
   const activeType = useApp((s) => s.activeType);
   const meta = SHEET_BY_ID[activeType];
   const settings = useApp((s) => s.settingsByType[activeType]);
@@ -59,7 +63,7 @@ export function SheetStage() {
     });
   }, [workbook, seed]);
 
-  const desktopLicense = Boolean(window.desktop?.isElectron);
+  const desktopLicense = isDesktop();
   const licenseStatus = useLicense((s) => s.status);
   const trialBlocked = useLicense(selectTrialBlocked);
   const remainingCount = useLicense(selectTrialRemainingCount);
@@ -95,16 +99,9 @@ export function SheetStage() {
   const zoom = autoFit ? fitZoom : userZoom;
   const pageCount = useMemo(() => {
     if (workbookSheets) {
-      return workbookSheets.reduce(
-        (sum, item) =>
-          sum +
-          (item.model.kind === 'pen' || item.model.kind === 'poem'
-            ? 1
-            : item.model.pages.length),
-        0,
-      );
+      return workbookSheets.reduce((sum, item) => sum + pageCountOf(item.model), 0);
     }
-    return model.kind === 'pen' || model.kind === 'poem' ? 1 : model.pages.length;
+    return pageCountOf(model);
   }, [model, workbookSheets]);
 
   const changeZoom = (delta: number) => {
@@ -114,26 +111,57 @@ export function SheetStage() {
 
   /** 导出前向主进程确认试用 / 激活状态；受限时直接打开设置引导激活。 */
   const ensureCanExport = async (format: 'pdf' | 'docx' | 'print'): Promise<boolean> => {
-    const desktop = window.desktop;
-    if (!desktop?.isElectron) return true;
+    if (!isDesktop()) return true;
     try {
-      const result = await desktop.licenseCheck();
-      if (result.status) useLicense.setState({ status: result.status });
+      const result = await useLicense.getState().check();
       if (result.allowed) return true;
       track('export', {
         format,
         result: 'blocked',
         reason: result.reason ?? 'unknown',
       });
-      setToast(result.error ?? '免费试用已结束，请激活后继续导出');
+      setToast(result.error ?? t('toast.trialBlockedExport'));
     } catch (error) {
       track('export', { format, result: 'failed', stage: 'license_check' });
       setToast(
-        `无法读取激活状态：${error instanceof Error ? error.message : String(error)}`,
+        t('toast.licenseReadFailed', {
+          error: error instanceof Error ? error.message : String(error),
+        }),
       );
     }
     useApp.getState().setSettingsOpen(true);
     return false;
+  };
+
+  /** 三种导出共用的结果处理：试用拦截、取消、成功与失败。 */
+  const finishExport = (
+    result: {
+      saved?: boolean;
+      printed?: boolean;
+      canceled?: boolean;
+      needActivation?: boolean;
+      error?: string;
+    },
+    text: {
+      blocked: string;
+      failure: Extract<I18nKey, 'toast.exportFailed' | 'toast.printFailed'>;
+      success: string;
+    },
+  ) => {
+    if (result.needActivation) {
+      setToast(result.error ?? text.blocked);
+      useApp.getState().setSettingsOpen(true);
+      void refreshLicense();
+    } else if (result.canceled) {
+      setToast('');
+    } else if (result.saved || result.printed) {
+      setToast(text.success);
+      void refreshLicense();
+    } else {
+      setToast(
+        t(text.failure, { error: result.error ?? t('common.unknownError') }),
+      );
+    }
   };
 
   const exportPdf = async () => {
@@ -144,30 +172,26 @@ export function SheetStage() {
     const desktop = window.desktop;
     try {
       if (desktop?.isElectron) {
-        setToast('正在生成 PDF…');
-        const result = await desktop.exportPdf();
-        if (result.needActivation) {
-          setToast(result.error ?? '免费试用已结束，请激活后继续导出');
-          useApp.getState().setSettingsOpen(true);
-          void refreshLicense();
-        } else if (result.canceled) {
-          setToast('');
-        } else if (result.saved) {
-          setToast('PDF 导出成功');
-          void refreshLicense();
-        } else {
-          setToast(`导出失败：${result.error ?? '未知错误'}`);
-        }
+        setToast(t('toast.generatingPdf'));
+        finishExport(await desktop.exportPdf(), {
+          blocked: t('toast.trialBlockedExport'),
+          failure: 'toast.exportFailed',
+          success: t('toast.pdfSaved'),
+        });
       } else {
-        setToast('正在生成 PDF…');
+        setToast(t('toast.generatingPdf'));
         const { createPdfFromPages } = await import('../../lib/exportPdf');
         const { blob, pages } = await createPdfFromPages();
         downloadBlob(blob, exportFileName('pdf'));
         track('export', { format: 'pdf', result: 'saved' });
-        setToast(`PDF 已下载（${pages} 页）`);
+        setToast(t('toast.pdfDownloaded', { count: pages }));
       }
     } catch (error) {
-      setToast(`导出失败：${error instanceof Error ? error.message : String(error)}`);
+      setToast(
+        t('toast.exportFailed', {
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
     } finally {
       setExportKind(null);
     }
@@ -180,7 +204,7 @@ export function SheetStage() {
 
     const desktop = window.desktop;
     if (!desktop?.isElectron) {
-      setToast('请在打印窗口中选择打印机，或「另存为 PDF」');
+      setToast(t('toast.printWebHint'));
       track('print');
       window.print();
       return;
@@ -188,21 +212,17 @@ export function SheetStage() {
 
     setExportKind('print');
     try {
-      const result = await desktop.printSheet();
-      if (result.needActivation) {
-        setToast(result.error ?? '免费试用已结束，请激活后继续打印');
-        useApp.getState().setSettingsOpen(true);
-        void refreshLicense();
-      } else if (result.canceled) {
-        setToast('');
-      } else if (result.printed) {
-        setToast('已发送到打印机');
-        void refreshLicense();
-      } else {
-        setToast(`打印失败：${result.error ?? '未知错误'}`);
-      }
+      finishExport(await desktop.printSheet(), {
+        blocked: t('toast.trialBlockedPrint'),
+        failure: 'toast.printFailed',
+        success: t('toast.printSent'),
+      });
     } catch (error) {
-      setToast(`打印失败：${error instanceof Error ? error.message : String(error)}`);
+      setToast(
+        t('toast.printFailed', {
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
     } finally {
       setExportKind(null);
     }
@@ -213,7 +233,7 @@ export function SheetStage() {
     if (!(await ensureCanExport('docx'))) return;
     setExportMenu(false);
     setExportKind('docx');
-    setToast('正在生成 Word 文档…');
+    setToast(t('toast.wordGenerating'));
     try {
       const { createDocxFromPages } = await import('../../lib/exportDocx');
       const { blob, pages } = await createDocxFromPages();
@@ -221,29 +241,31 @@ export function SheetStage() {
       const desktop = window.desktop;
       if (desktop?.isElectron) {
         const data = new Uint8Array(await blob.arrayBuffer());
-        const result = await desktop.saveFile({
-          defaultName: fileName,
-          filters: [{ name: 'Word 文档', extensions: ['docx'] }],
-          data,
-          kind: 'docx',
-          pages,
-        });
-        if (result.needActivation) {
-          setToast(result.error ?? '免费试用已结束，请激活后继续导出');
-          useApp.getState().setSettingsOpen(true);
-          void refreshLicense();
-        } else if (result.canceled) setToast('');
-        else if (result.saved) {
-          setToast(`Word 文档导出成功（${pages} 页）`);
-          void refreshLicense();
-        } else setToast(`导出失败：${result.error ?? '未知错误'}`);
+        finishExport(
+          await desktop.saveFile({
+            defaultName: fileName,
+            filters: [{ name: t('toast.wordFilter'), extensions: ['docx'] }],
+            data,
+            kind: 'docx',
+            pages,
+          }),
+          {
+            blocked: t('toast.trialBlockedExport'),
+            failure: 'toast.exportFailed',
+            success: t('toast.wordSaved', { count: pages }),
+          },
+        );
       } else {
         downloadBlob(blob, fileName);
         track('export', { format: 'docx', result: 'saved' });
-        setToast(`Word 文档已下载（${pages} 页）`);
+        setToast(t('toast.wordDownloaded', { count: pages }));
       }
     } catch (error) {
-      setToast(`导出失败：${error instanceof Error ? error.message : String(error)}`);
+      setToast(
+        t('toast.exportFailed', {
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
     } finally {
       setExportKind(null);
     }
@@ -277,34 +299,42 @@ export function SheetStage() {
       <div className="stage-toolbar">
         <div className="stage-title">
           <div className="stage-heading">
-            <span className="stage-eyebrow">{workbook ? '练习册预览' : '字帖预览'}</span>
-            <span className="stage-name">{workbook ? workbook.title : meta.label}</span>
+            <span className="stage-eyebrow">
+              {workbook ? t('stage.workbookPreview') : t('stage.sheetPreview')}
+            </span>
+            <span className="stage-name">
+              {workbook ? workbook.title : t(SHEET_LABEL_KEYS[meta.id])}
+            </span>
           </div>
           <div className="stage-chips">
             <span className="meta-chip">A4</span>
-            <span className="meta-chip">{pageCount} 页</span>
+            <span className="meta-chip">{t('stage.pageCount', { count: pageCount })}</span>
             {workbook && (
-              <span className="meta-chip">{workbook.sections.length} 张字帖</span>
+              <span className="meta-chip">
+                {t('stage.sheetCount', { count: workbook.sections.length })}
+              </span>
             )}
             {desktopLicense && licenseStatus && !licenseStatus.activated && (
               <span
                 className={`meta-chip ${trialBlocked ? 'is-warn' : ''}`}
-                title="免费试用额度：成功导出一次消耗一次"
+                title={t('stage.trialQuotaTitle')}
               >
-                {trialBlocked ? '试用已结束' : `试用剩余 ${remainingCount} 次`}
+                {trialBlocked
+                  ? t('stage.trialEnded')
+                  : t('stage.trialLeft', { count: remainingCount })}
               </span>
             )}
             {!workbook && meta.id === 'name' && settings.nameStrokeOrder && (
               stroke.loading ? (
                 <span className="meta-chip is-warn">
-                  <Loader2 size={9} className="spin" /> 笔顺加载中
+                  <Loader2 size={9} className="spin" /> {t('stage.strokeLoading')}
                 </span>
               ) : stroke.error ? (
                 <span className="meta-chip is-warn" title={stroke.error}>
-                  笔顺加载失败
+                  {t('stage.strokeFailed')}
                 </span>
               ) : (
-                <span className="meta-chip is-green">按笔顺</span>
+                <span className="meta-chip is-green">{t('stage.strokeOrder')}</span>
               )
             )}
           </div>
@@ -316,10 +346,10 @@ export function SheetStage() {
               type="button"
               className="btn btn-ghost"
               onClick={exitWorkbook}
-              title="退出练习册，返回单张字帖"
+              title={t('stage.exitWorkbookTitle')}
             >
               <ArrowLeft size={14} />
-              退出练习册
+              {t('stage.exitWorkbook')}
             </button>
           )}
 
@@ -328,32 +358,32 @@ export function SheetStage() {
               type="button"
               className="btn btn-ghost"
               onClick={shuffle}
-              title="重新随机生成题目"
+              title={t('stage.shuffleTitle')}
             >
               <RefreshCw size={14} />
-              换一组
+              {t('stage.shuffle')}
             </button>
           )}
 
           <div className="zoom-control">
-            <button type="button" aria-label="缩小" onClick={() => changeZoom(-0.1)}>
+            <button type="button" aria-label={t('stage.zoomOut')} onClick={() => changeZoom(-0.1)}>
               <Minus size={13} />
             </button>
             <button
               type="button"
               className="zoom-value"
-              title="适应窗口"
+              title={t('stage.fit')}
               onClick={() => setAutoFit(true)}
             >
               {Math.round(zoom * 100)}%
             </button>
-            <button type="button" aria-label="放大" onClick={() => changeZoom(0.1)}>
+            <button type="button" aria-label={t('stage.zoomIn')} onClick={() => changeZoom(0.1)}>
               <Plus size={13} />
             </button>
             <button
               type="button"
-              aria-label="适应窗口"
-              title="适应窗口"
+              aria-label={t('stage.fit')}
+              title={t('stage.fit')}
               onClick={() => setAutoFit(true)}
             >
               <Scan size={13} />
@@ -365,19 +395,19 @@ export function SheetStage() {
               className="btn btn-primary export-main"
               onClick={() => void printSheet()}
               disabled={exportKind !== null}
-              title={trialBlocked ? '免费试用已结束，点击激活' : '打印字帖'}
+              title={trialBlocked ? t('toast.trialBlockedPrint') : t('stage.printTitle')}
             >
               {exportKind !== null ? (
                 <Loader2 size={14} className="spin" />
               ) : (
                 <Printer size={14} />
               )}
-              {exportKind !== null ? '处理中…' : '打印'}
+              {exportKind !== null ? t('stage.processing') : t('stage.print')}
             </button>
             <button
               type="button"
               className="btn btn-primary export-caret"
-              aria-label="选择导出格式"
+              aria-label={t('stage.exportFormat')}
               aria-haspopup="menu"
               aria-expanded={exportMenu}
               disabled={exportKind !== null}
@@ -392,17 +422,19 @@ export function SheetStage() {
                   <button type="button" role="menuitem" onClick={() => void exportPdf()}>
                     <FileDown size={17} />
                     <span>
-                      <strong>下载 PDF</strong>
+                      <strong>{t('stage.downloadPdf')}</strong>
                       <small>
-                        {desktopLicense ? '保存为 PDF 文件' : '通过打印窗口另存为 PDF'}
+                        {desktopLicense
+                          ? t('stage.downloadPdfDesktop')
+                          : t('stage.downloadPdfWeb')}
                       </small>
                     </span>
                   </button>
                   <button type="button" role="menuitem" onClick={() => void exportDocx()}>
                     <FileType2 size={17} />
                     <span>
-                      <strong>下载 Word (.docx)</strong>
-                      <small>按高清页面图片导出，版式一致</small>
+                      <strong>{t('stage.downloadWord')}</strong>
+                      <small>{t('stage.downloadWordHint')}</small>
                     </span>
                   </button>
                 </div>
@@ -413,8 +445,8 @@ export function SheetStage() {
           <button
             type="button"
             className={`icon-btn stage-inspector-btn ${showInspector ? 'is-on' : ''}`}
-            title="设置"
-            aria-label="切换设置面板"
+            title={t('common.settings')}
+            aria-label={t('stage.toggleInspector')}
             onClick={toggleInspector}
           >
             <SlidersHorizontal size={15} />
@@ -433,8 +465,8 @@ export function SheetStage() {
           <div className="export-overlay-card">
             <Loader2 size={20} className="spin" />
             <div>
-              <strong>正在生成 Word 文档</strong>
-              <span>正在渲染 {pageCount} 页高清页面…</span>
+              <strong>{t('stage.generatingWord')}</strong>
+              <span>{t('stage.renderingPages', { count: pageCount })}</span>
             </div>
           </div>
         </div>

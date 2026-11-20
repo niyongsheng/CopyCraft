@@ -94,6 +94,8 @@ export interface DesktopBridge {
     error?: string;
   }>;
   setTheme: (theme: 'light' | 'dark') => Promise<{ ok: boolean }>;
+  /** Sync the interface language used by native menus and dialogs. */
+  setLanguage: (language: string) => Promise<{ ok: boolean }>;
   licenseStatus: () => Promise<LicenseStatusResult>;
   licenseCheck: () => Promise<LicenseCheckResult>;
   licenseActivate: (code: string) => Promise<LicenseActivateResult>;

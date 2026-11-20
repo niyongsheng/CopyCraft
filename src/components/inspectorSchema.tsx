@@ -10,6 +10,13 @@ import {
   Sparkles,
   Type,
 } from 'lucide-react';
+import {
+  FONT_GROUP_KEYS,
+  FONT_LABEL_KEYS,
+  WEIGHT_LABEL_KEYS,
+  type I18nKey,
+} from '../i18n';
+import { useT } from '../i18n/useT';
 import { isGeneratedSheet } from '../lib/constants';
 import { FONTS, FONT_WEIGHTS } from '../lib/fonts';
 import type { SheetMeta, SheetSettings } from '../types';
@@ -53,7 +60,7 @@ type ControlDef =
   | {
       kind: 'slider';
       key: NumericKey;
-      label: string;
+      label: I18nKey;
       min: number;
       max: number;
       step?: number;
@@ -63,26 +70,26 @@ type ControlDef =
   | {
       kind: 'select';
       key: SelectKey;
-      label: string;
-      options: { value: string | number; label: string }[];
+      label: I18nKey;
+      options: { value: string | number; label: I18nKey }[];
       hidden?: When;
     }
   | {
       kind: 'toggle';
       key: BooleanKey;
-      label: string;
-      hint?: string;
+      label: I18nKey;
+      hint?: I18nKey;
       disabled?: When;
       hidden?: When;
     }
-  | { kind: 'color'; key: ColorKey; label: string; hidden?: When }
+  | { kind: 'color'; key: ColorKey; label: I18nKey; hidden?: When }
   | { kind: 'font'; hidden?: When }
   | { kind: 'grid'; hidden?: When }
-  | { kind: 'note'; text: string; icon?: boolean; hidden?: When }
+  | { kind: 'note'; text: I18nKey; icon?: boolean; hidden?: When }
   | { kind: 'titleText'; hidden?: When };
 
 export interface CardDef {
-  label: string;
+  label: I18nKey;
   icon?: LucideIcon;
   defaultOpen?: boolean;
   hidden?: When;
@@ -90,231 +97,236 @@ export interface CardDef {
 }
 
 const MATH_OPERATION_OPTIONS = [
-  { value: 'add', label: '仅加法' },
-  { value: 'sub', label: '仅减法' },
-  { value: 'both', label: '加减混合' },
-];
+  { value: 'add', label: 'opt.addOnly' },
+  { value: 'sub', label: 'opt.subOnly' },
+  { value: 'both', label: 'opt.bothOps' },
+] satisfies { value: string; label: I18nKey }[];
 
 const MATH_MODE_OPTIONS = [
-  { value: 'calc', label: '运算' },
-  { value: 'fill', label: '填空' },
-];
+  { value: 'calc', label: 'opt.calc' },
+  { value: 'fill', label: 'opt.fill' },
+] satisfies { value: string; label: I18nKey }[];
 
 const VERTICAL_OPERATION_OPTIONS = [
-  { value: 'add', label: '加法' },
-  { value: 'sub', label: '减法' },
-  { value: 'both', label: '加减混合' },
-  { value: 'mul', label: '乘法' },
-  { value: 'div', label: '除法' },
-  { value: 'mixed', label: '四则混合' },
-];
+  { value: 'add', label: 'opt.add' },
+  { value: 'sub', label: 'opt.sub' },
+  { value: 'both', label: 'opt.bothOps' },
+  { value: 'mul', label: 'opt.mul' },
+  { value: 'div', label: 'opt.div' },
+  { value: 'mixed', label: 'opt.mixed' },
+] satisfies { value: string; label: I18nKey }[];
 
 const VERTICAL_DIGIT_OPTIONS = [
-  { value: 2, label: '两位数' },
-  { value: 3, label: '三位数' },
-];
+  { value: 2, label: 'opt.twoDigit' },
+  { value: 3, label: 'opt.threeDigit' },
+] satisfies { value: number; label: I18nKey }[];
 
 const VERTICAL_CARRY_OPTIONS = [
-  { value: 'any', label: '不限' },
-  { value: 'require', label: '必须有进退位' },
-  { value: 'avoid', label: '不进位/不退位' },
-];
+  { value: 'any', label: 'opt.any' },
+  { value: 'require', label: 'opt.carryRequired' },
+  { value: 'avoid', label: 'opt.carryAvoid' },
+] satisfies { value: string; label: I18nKey }[];
 
 const ABACUS_MODE_OPTIONS = [
-  { value: 'read', label: '看珠写数' },
-  { value: 'draw', label: '看数画珠' },
-  { value: 'calc', label: '心算连算' },
-];
+  { value: 'read', label: 'opt.abacusRead' },
+  { value: 'draw', label: 'opt.abacusDraw' },
+  { value: 'calc', label: 'opt.abacusCalc' },
+] satisfies { value: string; label: I18nKey }[];
 
 const ABACUS_ROD_OPTIONS = [
-  { value: 1, label: '一位数' },
-  { value: 2, label: '两位数' },
-  { value: 3, label: '三位数' },
-  { value: 4, label: '四位数' },
-];
+  { value: 1, label: 'opt.oneDigit' },
+  { value: 2, label: 'opt.twoDigit' },
+  { value: 3, label: 'opt.threeDigit' },
+  { value: 4, label: 'opt.fourDigit' },
+] satisfies { value: number; label: I18nKey }[];
 
 const ABACUS_TERM_OPTIONS = [
-  { value: 2, label: '2 个数' },
-  { value: 3, label: '3 个数' },
-  { value: 4, label: '4 个数' },
-];
+  { value: 2, label: 'opt.twoTerms' },
+  { value: 3, label: 'opt.threeTerms' },
+  { value: 4, label: 'opt.fourTerms' },
+] satisfies { value: number; label: I18nKey }[];
 
 const EXPRESSION_OPERATION_OPTIONS = [
-  { value: 'addSub', label: '加减' },
-  { value: 'mulDiv', label: '乘除' },
-  { value: 'mixed', label: '四则混合' },
-];
+  { value: 'addSub', label: 'opt.addSub' },
+  { value: 'mulDiv', label: 'opt.mulDiv' },
+  { value: 'mixed', label: 'opt.mixed' },
+] satisfies { value: string; label: I18nKey }[];
 
 const EXPRESSION_STEP_OPTIONS = [
-  { value: 2, label: '两步' },
-  { value: 3, label: '三步' },
-];
+  { value: 2, label: 'opt.twoSteps' },
+  { value: 3, label: 'opt.threeSteps' },
+] satisfies { value: number; label: I18nKey }[];
 
 const CLOCK_MODE_OPTIONS = [
-  { value: 'read', label: '读取时间' },
-  { value: 'draw', label: '刻画时间' },
-];
+  { value: 'read', label: 'opt.readTime' },
+  { value: 'draw', label: 'opt.drawTime' },
+] satisfies { value: string; label: I18nKey }[];
 
 const CLOCK_FACE_OPTIONS = [
-  { value: 'arabic', label: '阿拉伯数字' },
-  { value: 'roman', label: '罗马数字' },
-  { value: 'none', label: '无数字' },
-];
+  { value: 'arabic', label: 'opt.arabic' },
+  { value: 'roman', label: 'opt.roman' },
+  { value: 'none', label: 'opt.none' },
+] satisfies { value: string; label: I18nKey }[];
 
 const CLOCK_MINUTE_OPTIONS = [
-  { value: 'any', label: '任意时间' },
-  { value: '5', label: '5 分钟' },
-  { value: '15', label: '整点 / 半点' },
-];
+  { value: 'any', label: 'opt.anyTime' },
+  { value: '5', label: 'opt.fiveMin' },
+  { value: '15', label: 'opt.onTheHour' },
+] satisfies { value: string; label: I18nKey }[];
 
 const FONT_WEIGHT_OPTIONS = FONT_WEIGHTS.map((weight) => ({
   value: weight.value,
-  label: weight.label,
+  label: WEIGHT_LABEL_KEYS[weight.value],
 }));
 
-const FONT_GROUPS = [
+const FONT_GROUPS: { label: I18nKey; options: { value: string; label: I18nKey }[] }[] = [
   {
-    label: '中文',
+    label: FONT_GROUP_KEYS['中文'],
     options: FONTS.filter((font) => font.group === '中文').map((font) => ({
       value: font.id,
-      label: font.label,
+      label: FONT_LABEL_KEYS[font.id],
     })),
   },
   {
-    label: '英文',
+    label: FONT_GROUP_KEYS['英文'],
     options: FONTS.filter((font) => font.group === '英文').map((font) => ({
       value: font.id,
-      label: font.label,
+      label: FONT_LABEL_KEYS[font.id],
     })),
   },
 ];
 
 const NAME_CARD: CardDef = {
-  label: '姓名笔顺',
+  label: 'card.nameStroke',
   icon: Sparkles,
   controls: [
     {
       kind: 'toggle',
       key: 'nameStrokeOrder',
-      label: '按笔顺显示',
-      hint: '把姓名拆成逐笔推进的示范格',
+      label: 'ctl.nameStrokeOrder',
+      hint: 'ctl.nameStrokeOrderHint',
     },
     {
       kind: 'toggle',
       key: 'nameTruncateAfterStrokes',
-      label: '笔画完毕截断',
-      hint: '写完最后一笔后，行尾不再填充整字',
+      label: 'ctl.nameTruncate',
+      hint: 'ctl.nameTruncateHint',
       disabled: ({ settings }) => !settings.nameStrokeOrder,
     },
     {
       kind: 'toggle',
       key: 'nameNoRepeat',
-      label: '不重复生成',
-      hint: '每个名字只出现一遍，不重复铺满整行',
+      label: 'ctl.nameNoRepeat',
+      hint: 'ctl.nameNoRepeatHint',
     },
     {
       kind: 'note',
       icon: true,
-      text: '首次开启需联网加载笔顺数据，加载后自动显示示范。',
+      text: 'ctl.nameStrokeNote',
       hidden: ({ settings }) => !settings.nameStrokeOrder,
     },
   ],
 };
 
 const CLOCK_CARD: CardDef = {
-  label: '时钟',
+  label: 'card.clock',
   icon: Clock3,
   controls: [
-    { kind: 'select', key: 'clockMode', label: '模式', options: CLOCK_MODE_OPTIONS },
-    { kind: 'select', key: 'clockFace', label: '表盘', options: CLOCK_FACE_OPTIONS },
-    { kind: 'select', key: 'clockMinute', label: '分针', options: CLOCK_MINUTE_OPTIONS },
-    { kind: 'toggle', key: 'clock24h', label: '24 小时制' },
-    { kind: 'toggle', key: 'clockShowTime', label: '显示时间' },
-    { kind: 'slider', key: 'count', label: '题目数量', min: 5, max: 60 },
+    { kind: 'select', key: 'clockMode', label: 'ctl.clockMode', options: CLOCK_MODE_OPTIONS },
+    { kind: 'select', key: 'clockFace', label: 'ctl.clockFace', options: CLOCK_FACE_OPTIONS },
+    {
+      kind: 'select',
+      key: 'clockMinute',
+      label: 'ctl.clockMinute',
+      options: CLOCK_MINUTE_OPTIONS,
+    },
+    { kind: 'toggle', key: 'clock24h', label: 'ctl.clock24h' },
+    { kind: 'toggle', key: 'clockShowTime', label: 'ctl.clockShowTime' },
+    { kind: 'slider', key: 'count', label: 'ctl.count', min: 5, max: 60 },
   ],
 };
 
 const PEN_CARD: CardDef = {
-  label: '控笔',
+  label: 'card.pen',
   icon: Brush,
-  controls: [
-    {
-      kind: 'note',
-      text: '自动装订 24 种控笔线条图案，从直线、曲线到螺旋与迷宫，帮助孩子练习控笔方向与力度。',
-    },
-  ],
+  controls: [{ kind: 'note', text: 'ctl.penNote' }],
 };
 
 const LAYOUT_CARD: CardDef = {
-  label: '排版',
+  label: 'card.layout',
   icon: SlidersHorizontal,
   controls: [
     {
       kind: 'slider',
       key: 'lineSpacing',
-      label: '行间距',
+      label: 'ctl.lineSpacing',
       min: 0,
       max: 24,
       unit: 'px',
       hidden: ({ meta }) => isGeneratedSheet(meta),
     },
-    { kind: 'slider', key: 'hMargin', label: '水平边距', min: 12, max: 100, unit: 'px' },
-    { kind: 'slider', key: 'vMargin', label: '垂直边距', min: 12, max: 100, unit: 'px' },
-    { kind: 'slider', key: 'fontSize', label: '大小', min: 30, max: 120, unit: '%' },
-    { kind: 'slider', key: 'offset', label: '上下偏移', min: -20, max: 20, unit: 'px' },
-    { kind: 'slider', key: 'offsetX', label: '左右偏移', min: -20, max: 20, unit: 'px' },
+    { kind: 'slider', key: 'hMargin', label: 'ctl.hMargin', min: 12, max: 100, unit: 'px' },
+    { kind: 'slider', key: 'vMargin', label: 'ctl.vMargin', min: 12, max: 100, unit: 'px' },
+    { kind: 'slider', key: 'fontSize', label: 'ctl.fontSize', min: 30, max: 120, unit: '%' },
+    { kind: 'slider', key: 'offset', label: 'ctl.offset', min: -20, max: 20, unit: 'px' },
+    { kind: 'slider', key: 'offsetX', label: 'ctl.offsetX', min: -20, max: 20, unit: 'px' },
     { kind: 'font' },
-    { kind: 'select', key: 'fontWeight', label: '粗细', options: FONT_WEIGHT_OPTIONS },
+    {
+      kind: 'select',
+      key: 'fontWeight',
+      label: 'ctl.fontWeight',
+      options: FONT_WEIGHT_OPTIONS,
+    },
     {
       kind: 'toggle',
       key: 'showPinyin',
-      label: '拼音',
+      label: 'ctl.pinyin',
       hidden: ({ meta }) => !meta.showPinyinOption,
     },
     {
       kind: 'toggle',
       key: 'showText',
-      label: '文本',
+      label: 'ctl.text',
       hidden: ({ meta }) => !meta.showTextOption,
     },
   ],
 };
 
 const GRID_CARD: CardDef = {
-  label: '格子',
+  label: 'card.grid',
   icon: Grid3X3,
   controls: [
     { kind: 'grid' },
-    { kind: 'slider', key: 'gridSize', label: '网格大小', min: 20, max: 80 },
-    { kind: 'color', key: 'borderColor', label: '边框颜色' },
-    { kind: 'color', key: 'lineColor', label: '线条颜色' },
-    { kind: 'color', key: 'traceColor', label: '描红颜色' },
-    { kind: 'toggle', key: 'showBorder', label: '显示边框' },
+    { kind: 'slider', key: 'gridSize', label: 'ctl.gridSize', min: 20, max: 80 },
+    { kind: 'color', key: 'borderColor', label: 'ctl.borderColor' },
+    { kind: 'color', key: 'lineColor', label: 'ctl.lineColor' },
+    { kind: 'color', key: 'traceColor', label: 'ctl.traceColor' },
+    { kind: 'toggle', key: 'showBorder', label: 'ctl.showBorder' },
   ],
 };
 
 const STYLE_CARD: CardDef = {
-  label: '样式',
+  label: 'card.style',
   icon: Palette,
   defaultOpen: false,
   controls: [
-    { kind: 'color', key: 'borderColor', label: '边框颜色' },
-    { kind: 'color', key: 'traceColor', label: '描红颜色' },
-    { kind: 'toggle', key: 'showBorder', label: '显示边框' },
+    { kind: 'color', key: 'borderColor', label: 'ctl.borderColor' },
+    { kind: 'color', key: 'traceColor', label: 'ctl.traceColor' },
+    { kind: 'toggle', key: 'showBorder', label: 'ctl.showBorder' },
   ],
 };
 
 const TITLE_CARD: CardDef = {
-  label: '标题',
+  label: 'card.title',
   icon: Type,
   defaultOpen: false,
   controls: [
-    { kind: 'toggle', key: 'showTitle', label: '显示标题' },
+    { kind: 'toggle', key: 'showTitle', label: 'ctl.showTitle' },
     { kind: 'titleText', hidden: ({ settings }) => !settings.showTitle },
     {
       kind: 'slider',
       key: 'titleHeight',
-      label: '高',
+      label: 'ctl.titleHeight',
       min: 40,
       max: 120,
       unit: 'px',
@@ -324,25 +336,25 @@ const TITLE_CARD: CardDef = {
 };
 
 const VERTICAL_CARD: CardDef = {
-  label: '竖式',
+  label: 'card.vertical',
   icon: Calculator,
   controls: [
     {
       kind: 'select',
       key: 'verticalOperation',
-      label: '运算',
+      label: 'ctl.verticalOperation',
       options: VERTICAL_OPERATION_OPTIONS,
     },
     {
       kind: 'select',
       key: 'verticalDigits',
-      label: '位数',
+      label: 'ctl.verticalDigits',
       options: VERTICAL_DIGIT_OPTIONS,
     },
     {
       kind: 'select',
       key: 'verticalCarry',
-      label: '进位/退位',
+      label: 'ctl.verticalCarry',
       options: VERTICAL_CARRY_OPTIONS,
       hidden: ({ settings }) =>
         settings.verticalOperation === 'mul' || settings.verticalOperation === 'div',
@@ -350,15 +362,15 @@ const VERTICAL_CARD: CardDef = {
     {
       kind: 'toggle',
       key: 'verticalAllowRemainder',
-      label: '允许余数',
-      hint: '除法结果可以有余数',
+      label: 'ctl.verticalAllowRemainder',
+      hint: 'ctl.verticalAllowRemainderHint',
       hidden: ({ settings }) =>
         settings.verticalOperation !== 'div' && settings.verticalOperation !== 'mixed',
     },
-    { kind: 'slider', key: 'count', label: '题目数量', min: 4, max: 60 },
+    { kind: 'slider', key: 'count', label: 'ctl.count', min: 4, max: 60 },
     {
       kind: 'note',
-      text: '乘法为多位数 × 一位数；除法为多位数 ÷ 一位数。',
+      text: 'ctl.verticalNote',
       hidden: ({ settings }) =>
         settings.verticalOperation !== 'mul' &&
         settings.verticalOperation !== 'div' &&
@@ -368,114 +380,118 @@ const VERTICAL_CARD: CardDef = {
 };
 
 const ABACUS_CARD: CardDef = {
-  label: '珠心算',
+  label: 'card.abacus',
   icon: Calculator,
   controls: [
     {
       kind: 'select',
       key: 'abacusMode',
-      label: '模式',
+      label: 'ctl.abacusMode',
       options: ABACUS_MODE_OPTIONS,
     },
     {
       kind: 'select',
       key: 'abacusRods',
-      label: '位数',
+      label: 'ctl.abacusRods',
       options: ABACUS_ROD_OPTIONS,
     },
     {
       kind: 'select',
       key: 'abacusTerms',
-      label: '连算个数',
+      label: 'ctl.abacusTerms',
       options: ABACUS_TERM_OPTIONS,
       hidden: ({ settings }) => settings.abacusMode !== 'calc',
     },
     {
       kind: 'select',
       key: 'mathOperation',
-      label: '运算',
+      label: 'ctl.abacusOperation',
       options: MATH_OPERATION_OPTIONS,
       hidden: ({ settings }) => settings.abacusMode !== 'calc',
     },
-    { kind: 'slider', key: 'count', label: '题目数量', min: 4, max: 24 },
-    {
-      kind: 'note',
-      text: '看珠写数：根据算盘珠写数字；看数画珠：在空算盘上拨珠；心算连算：连续加减心算。',
-    },
+    { kind: 'slider', key: 'count', label: 'ctl.count', min: 4, max: 24 },
+    { kind: 'note', text: 'ctl.abacusNote' },
   ],
 };
 
 const EXPRESSION_CARD: CardDef = {
-  label: '脱式',
+  label: 'card.expression',
   icon: Calculator,
   controls: [
     {
       kind: 'select',
       key: 'expressionOperation',
-      label: '运算',
+      label: 'ctl.expressionOperation',
       options: EXPRESSION_OPERATION_OPTIONS,
     },
     {
       kind: 'select',
       key: 'expressionSteps',
-      label: '步数',
+      label: 'ctl.expressionSteps',
       options: EXPRESSION_STEP_OPTIONS,
     },
     {
       kind: 'toggle',
       key: 'expressionParentheses',
-      label: '带括号',
-      hint: '混合运算会自动补括号',
+      label: 'ctl.expressionParentheses',
+      hint: 'ctl.expressionParenthesesHint',
       hidden: ({ settings }) => settings.expressionOperation === 'mixed',
     },
-    { kind: 'slider', key: 'mathRange', label: '数字范围', min: 5, max: 99 },
-    { kind: 'slider', key: 'count', label: '题目数量', min: 4, max: 40 },
+    { kind: 'slider', key: 'mathRange', label: 'ctl.mathRange', min: 5, max: 99 },
+    { kind: 'slider', key: 'count', label: 'ctl.count', min: 4, max: 40 },
   ],
 };
 
 const POEM_CARD: CardDef = {
-  label: '古诗词',
+  label: 'card.poem',
   icon: Type,
   controls: [
-    { kind: 'toggle', key: 'poemVertical', label: '竖排' },
-    { kind: 'toggle', key: 'poemShowAuthor', label: '显示作者' },
-    { kind: 'toggle', key: 'poemShowNotes', label: '显示注释' },
-    {
-      kind: 'note',
-      text: '第一行格式：诗题|作者|朝代；其后每行一句，注释行以「注：」开头。竖排模式不显示拼音。',
-    },
+    { kind: 'toggle', key: 'poemVertical', label: 'ctl.poemVertical' },
+    { kind: 'toggle', key: 'poemShowAuthor', label: 'ctl.poemShowAuthor' },
+    { kind: 'toggle', key: 'poemShowNotes', label: 'ctl.poemShowNotes' },
+    { kind: 'note', text: 'ctl.poemNote' },
   ],
 };
 
 const ENGLISH_WORD_CARD: CardDef = {
-  label: '单词',
+  label: 'card.word',
   icon: Type,
   controls: [
-    { kind: 'toggle', key: 'englishWordShowMeaning', label: '显示中文' },
-    { kind: 'note', text: '每行格式：word|中文。下方自动留一行空白四线格。' },
+    { kind: 'toggle', key: 'englishWordShowMeaning', label: 'ctl.englishWordShowMeaning' },
+    { kind: 'note', text: 'ctl.englishWordNote' },
   ],
 };
 
 function mathCard(meta: SheetMeta): CardDef {
   const isTimesTable = meta.id === 'multiplication' || meta.id === 'division';
   return {
-    label: '题目',
+    label: 'card.math',
     icon: Calculator,
     controls: [
       ...(meta.id === 'addSub'
         ? ([
-            { kind: 'select', key: 'mathOperation', label: '运算', options: MATH_OPERATION_OPTIONS },
-            { kind: 'select', key: 'mathMode', label: '模式', options: MATH_MODE_OPTIONS },
+            {
+              kind: 'select',
+              key: 'mathOperation',
+              label: 'ctl.mathOperation',
+              options: MATH_OPERATION_OPTIONS,
+            },
+            {
+              kind: 'select',
+              key: 'mathMode',
+              label: 'ctl.mathMode',
+              options: MATH_MODE_OPTIONS,
+            },
           ] satisfies ControlDef[])
         : []),
       {
         kind: 'slider',
         key: 'mathRange',
-        label: isTimesTable ? '口诀范围' : '范围',
+        label: isTimesTable ? 'ctl.mathRangeTable' : 'ctl.mathRange',
         min: isTimesTable ? 2 : 5,
         max: isTimesTable ? 12 : 99,
       },
-      { kind: 'slider', key: 'count', label: '题目数量', min: 4, max: 120 },
+      { kind: 'slider', key: 'count', label: 'ctl.count', min: 4, max: 120 },
     ],
   };
 }
@@ -514,6 +530,7 @@ export function InspectorCards({
   title: string;
   onTitleChange: (title: string) => void;
 }) {
+  const t = useT();
   const ctx = { meta, settings };
   return (
     <>
@@ -523,7 +540,7 @@ export function InspectorCards({
         return (
           <Section
             key={card.label}
-            label={card.label}
+            label={t(card.label)}
             icon={Icon ? <Icon size={14} /> : undefined}
             defaultOpen={card.defaultOpen}
           >
@@ -560,13 +577,14 @@ function ControlRow({
   title: string;
   onTitleChange: (title: string) => void;
 }) {
+  const t = useT();
   if (control.hidden?.(ctx)) return null;
 
   switch (control.kind) {
     case 'slider':
       return (
         <SliderRow
-          label={control.label}
+          label={t(control.label)}
           min={control.min}
           max={control.max}
           step={control.step}
@@ -578,17 +596,20 @@ function ControlRow({
     case 'select':
       return (
         <SelectRow
-          label={control.label}
+          label={t(control.label)}
           value={settings[control.key]}
-          options={control.options}
+          options={control.options.map((option) => ({
+            value: option.value,
+            label: t(option.label),
+          }))}
           onChange={(value) => onChange(control.key, value)}
         />
       );
     case 'toggle':
       return (
         <ToggleRow
-          label={control.label}
-          hint={control.hint}
+          label={t(control.label)}
+          hint={control.hint ? t(control.hint) : undefined}
           checked={settings[control.key]}
           disabled={control.disabled?.(ctx)}
           onChange={(value) => onChange(control.key, value)}
@@ -597,7 +618,7 @@ function ControlRow({
     case 'color':
       return (
         <ColorRow
-          label={control.label}
+          label={t(control.label)}
           value={settings[control.key]}
           onChange={(value) => onChange(control.key, value)}
         />
@@ -605,10 +626,16 @@ function ControlRow({
     case 'font':
       return (
         <SelectRow
-          label="字体"
+          label={t('ctl.font')}
           value={settings.fontId}
           options={[]}
-          groups={FONT_GROUPS}
+          groups={FONT_GROUPS.map((group) => ({
+            label: t(group.label),
+            options: group.options.map((option) => ({
+              value: option.value,
+              label: t(option.label),
+            })),
+          }))}
           onChange={(value) => onChange('fontId', value)}
         />
       );
@@ -623,10 +650,17 @@ function ControlRow({
       return (
         <p className={`inspector-note ${control.icon ? 'has-icon' : ''}`}>
           {control.icon && <Info size={12} aria-hidden="true" />}
-          <span>{control.text}</span>
+          <span>{t(control.text)}</span>
         </p>
       );
     case 'titleText':
-      return <TextRow label="文字" value={title} onChange={onTitleChange} maxLength={40} />;
+      return (
+        <TextRow
+          label={t('ctl.titleText')}
+          value={title}
+          onChange={onTitleChange}
+          maxLength={40}
+        />
+      );
   }
 }

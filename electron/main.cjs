@@ -16,6 +16,7 @@ const fs = require('node:fs');
 const fsp = require('node:fs/promises');
 const { createLicense } = require('./license.cjs');
 const { createAnalytics } = require('./analytics.cjs');
+const { setLanguage, t } = require('./i18n.cjs');
 
 const isMac = process.platform === 'darwin';
 const isWin = process.platform === 'win32';
@@ -39,8 +40,6 @@ let mainWindow = null;
 let exportInProgress = false;
 let licenseManager = null;
 
-const TRIAL_BLOCKED_MESSAGE = '免费试用已结束，请激活后继续导出';
-
 function errorMessage(error) {
   return error instanceof Error ? error.message : String(error);
 }
@@ -53,7 +52,7 @@ function notifyLicenseChanged(win) {
 function exportGate(format) {
   if (!licenseManager) {
     analytics?.track('export', { format, result: 'blocked', reason: 'license_unavailable' });
-    return { saved: false, error: '激活模块未初始化，请重启应用后重试' };
+    return { saved: false, error: t('error.licenseUnavailable') };
   }
   try {
     const gate = licenseManager.checkExport();
@@ -66,13 +65,13 @@ function exportGate(format) {
     return {
       saved: false,
       needActivation: true,
-      error: TRIAL_BLOCKED_MESSAGE,
+      error: t('msg.trialBlocked'),
     };
   } catch (error) {
     analytics?.track('export', { format, result: 'failed', stage: 'license' });
     return {
       saved: false,
-      error: `激活状态读取失败：${errorMessage(error)}`,
+      error: t('error.licenseReadFailed', { error: errorMessage(error) }),
     };
   }
 }
@@ -189,7 +188,7 @@ function createWindow(state = {}) {
     minHeight: 640,
     show: false,
     backgroundColor: colors.background,
-    title: 'Copycraft 字帖工坊',
+    title: t('app.name'),
     icon: ICON,
     titleBarStyle: isMac ? 'hiddenInset' : 'hidden',
     ...(isMac
@@ -266,10 +265,10 @@ function timestamp() {
 
 async function exportPdf(win) {
   if (!win || win.isDestroyed()) {
-    return { saved: false, error: '窗口不可用' };
+    return { saved: false, error: t('error.windowUnavailable') };
   }
   if (exportInProgress) {
-    return { saved: false, error: '正在导出，请稍候' };
+    return { saved: false, error: t('error.exportInProgress') };
   }
 
   exportInProgress = true;
@@ -279,16 +278,19 @@ async function exportPdf(win) {
       "Boolean(document.querySelector('.sheet-page'))",
     );
     if (!hasSheet) {
-      return { saved: false, error: '当前视图没有可导出的字帖，请先选择一个字帖类型' };
+      return { saved: false, error: t('error.noSheetPdf') };
     }
 
     const blocked = exportGate('pdf');
     if (blocked) return blocked;
 
     const { canceled, filePath } = await dialog.showSaveDialog(win, {
-      title: '导出字帖 PDF',
-      defaultPath: path.join(app.getPath('downloads'), `Copycraft-${timestamp()}.pdf`),
-      filters: [{ name: 'PDF 文件', extensions: ['pdf'] }],
+      title: t('dialog.exportPdfTitle'),
+      defaultPath: path.join(
+        app.getPath('downloads'),
+        `Copycraft-${t('export.worksheetWord')}-${timestamp()}.pdf`,
+      ),
+      filters: [{ name: t('filter.pdf'), extensions: ['pdf'] }],
       properties: ['createDirectory', 'showOverwriteConfirmation'],
     });
     if (canceled || !filePath) {
@@ -311,7 +313,7 @@ async function exportPdf(win) {
     analytics?.track('export', { format: 'pdf', result: 'failed', stage: 'export' });
     return {
       saved: false,
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage(error),
     };
   } finally {
     exportInProgress = false;
@@ -324,10 +326,10 @@ async function exportPdf(win) {
  */
 async function printSheet(win) {
   if (!win || win.isDestroyed()) {
-    return { printed: false, error: '窗口不可用' };
+    return { printed: false, error: t('error.windowUnavailable') };
   }
   if (exportInProgress) {
-    return { printed: false, error: '正在处理，请稍候' };
+    return { printed: false, error: t('error.printInProgress') };
   }
 
   exportInProgress = true;
@@ -336,7 +338,7 @@ async function printSheet(win) {
       "Boolean(document.querySelector('.sheet-page'))",
     );
     if (!hasSheet) {
-      return { printed: false, error: '当前视图没有可打印的字帖，请先选择一个字帖类型' };
+      return { printed: false, error: t('error.noSheetPrint') };
     }
 
     const blocked = exportGate('print');
@@ -381,7 +383,7 @@ async function printSheet(win) {
     analytics?.track('export', { format: 'print', result: 'failed', stage: 'print' });
     return {
       printed: false,
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage(error),
     };
   } finally {
     exportInProgress = false;
@@ -392,10 +394,10 @@ function buildMenu() {
   const template = [
     ...(isMac ? [{ role: 'appMenu' }] : []),
     {
-      label: '文件',
+      label: t('menu.file'),
       submenu: [
         {
-          label: '导出 PDF…',
+          label: t('menu.exportPdf'),
           accelerator: 'CmdOrCtrl+Shift+E',
           click: async () => {
             if (!mainWindow) return;
@@ -403,10 +405,10 @@ function buildMenu() {
             if (result.needActivation) {
               const choice = await dialog.showMessageBox(mainWindow, {
                 type: 'warning',
-                title: '需要激活',
-                message: '免费试用已结束',
-                detail: '激活后可无限次导出字帖。是否打开设置进行激活？',
-                buttons: ['打开设置', '取消'],
+                title: t('menu.needActivation'),
+                message: t('menu.trialEnded'),
+                detail: t('menu.activationDetail'),
+                buttons: [t('menu.openSettings'), t('menu.cancel')],
                 defaultId: 0,
                 cancelId: 1,
               });
@@ -414,35 +416,40 @@ function buildMenu() {
                 mainWindow.webContents.send('open-settings');
               }
             } else if (!result.saved && !result.canceled) {
-              dialog.showErrorBox('导出失败', result.error || '未知错误');
+              dialog.showErrorBox(
+                t('menu.exportFailed'),
+                result.error || t('common.unknownError'),
+              );
             }
           },
         },
         { type: 'separator' },
-        isMac ? { role: 'close', label: '关闭窗口' } : { role: 'quit', label: '退出' },
+        isMac
+          ? { role: 'close', label: t('menu.closeWindow') }
+          : { role: 'quit', label: t('menu.quit') },
       ],
     },
-    { role: 'editMenu', label: '编辑' },
+    { role: 'editMenu', label: t('menu.edit') },
     {
-      label: '视图',
+      label: t('menu.view'),
       submenu: [
-        { role: 'reload', label: '重新加载' },
-        { role: 'forceReload', label: '强制重新加载' },
-        { role: 'toggleDevTools', label: '开发者工具' },
+        { role: 'reload', label: t('menu.reload') },
+        { role: 'forceReload', label: t('menu.forceReload') },
+        { role: 'toggleDevTools', label: t('menu.devTools') },
         { type: 'separator' },
-        { role: 'resetZoom', label: '实际大小' },
-        { role: 'zoomIn', label: '放大' },
-        { role: 'zoomOut', label: '缩小' },
+        { role: 'resetZoom', label: t('menu.actualSize') },
+        { role: 'zoomIn', label: t('menu.zoomIn') },
+        { role: 'zoomOut', label: t('menu.zoomOut') },
         { type: 'separator' },
-        { role: 'togglefullscreen', label: '切换全屏' },
+        { role: 'togglefullscreen', label: t('menu.fullscreen') },
       ],
     },
-    { role: 'windowMenu', label: '窗口' },
+    { role: 'windowMenu', label: t('menu.window') },
     {
-      label: '帮助',
+      label: t('menu.help'),
       submenu: [
         {
-          label: '激活 Copycraft…',
+          label: t('menu.activate'),
           click: () => {
             if (mainWindow && !mainWindow.isDestroyed()) {
               mainWindow.webContents.send('open-settings');
@@ -451,14 +458,19 @@ function buildMenu() {
         },
         { type: 'separator' },
         {
-          label: '关于 Copycraft 字帖工坊',
+          label: t('menu.about'),
           click: () => {
             void dialog.showMessageBox({
               type: 'info',
-              title: '关于 Copycraft 字帖工坊',
-              message: 'Copycraft 字帖工坊',
-              detail: `版本 ${app.getVersion()}\nReact + Electron 字帖生成器\nElectron ${process.versions.electron}\nChromium ${process.versions.chrome}\nNode ${process.versions.node}`,
-              buttons: ['好的'],
+              title: t('menu.about'),
+              message: t('app.name'),
+              detail: t('about.detail', {
+                version: app.getVersion(),
+                electron: process.versions.electron,
+                chromium: process.versions.chrome,
+                node: process.versions.node,
+              }),
+              buttons: [t('menu.ok')],
             });
           },
         },
@@ -466,6 +478,15 @@ function buildMenu() {
     },
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
+function applyAboutPanelOptions() {
+  if (!isMac) return;
+  app.setAboutPanelOptions({
+    applicationName: t('app.name'),
+    applicationVersion: app.getVersion(),
+    credits: t('about.credits'),
+  });
 }
 
 ipcMain.handle('export-pdf', (event) => {
@@ -480,7 +501,7 @@ ipcMain.handle('print-sheet', (event) => {
 
 ipcMain.handle('license-status', () => {
   if (!licenseManager) {
-    return { ok: false, status: null, error: '激活模块未初始化' };
+    return { ok: false, status: null, error: t('error.licenseUnavailableShort') };
   }
   try {
     return { ok: true, status: licenseManager.status() };
@@ -491,7 +512,7 @@ ipcMain.handle('license-status', () => {
 
 ipcMain.handle('license-check', () => {
   if (!licenseManager) {
-    return { allowed: false, status: null, error: '激活模块未初始化' };
+    return { allowed: false, status: null, error: t('error.licenseUnavailableShort') };
   }
   try {
     return licenseManager.checkExport();
@@ -499,14 +520,14 @@ ipcMain.handle('license-check', () => {
     return {
       allowed: false,
       status: null,
-      error: `激活状态读取失败：${errorMessage(error)}`,
+      error: t('error.licenseReadFailed', { error: errorMessage(error) }),
     };
   }
 });
 
 ipcMain.handle('license-activate', (_event, code) => {
   if (!licenseManager) {
-    return { ok: false, error: '激活模块未初始化' };
+    return { ok: false, error: t('error.licenseUnavailableShort') };
   }
   const result = licenseManager.activate(code);
   analytics?.track('activation', {
@@ -526,11 +547,13 @@ ipcMain.handle('analytics-set', (_event, enabled) => {
 
 ipcMain.handle('save-file', async (event, payload) => {
   const win = BrowserWindow.fromWebContents(event.sender);
-  if (!win || win.isDestroyed()) return { saved: false, error: '窗口不可用' };
+  if (!win || win.isDestroyed()) {
+    return { saved: false, error: t('error.windowUnavailable') };
+  }
 
   const { defaultName, filters, data, kind, pages } = payload || {};
   if (!data || typeof data !== 'object') {
-    return { saved: false, error: '无效的文件数据' };
+    return { saved: false, error: t('error.invalidFile') };
   }
 
   const format = kind === 'docx' ? 'docx' : 'file';
@@ -546,9 +569,11 @@ ipcMain.handle('save-file', async (event, payload) => {
 
   const safeName = path.basename(String(defaultName || 'Copycraft-export'));
   const { canceled, filePath } = await dialog.showSaveDialog(win, {
-    title: '保存文件',
+    title: t('dialog.saveFile'),
     defaultPath: path.join(app.getPath('downloads'), safeName),
-    filters: Array.isArray(filters) ? filters : [{ name: '所有文件', extensions: ['*'] }],
+    filters: Array.isArray(filters)
+      ? filters
+      : [{ name: t('filter.all'), extensions: ['*'] }],
     properties: ['createDirectory', 'showOverwriteConfirmation'],
   });
   if (canceled || !filePath) {
@@ -565,7 +590,7 @@ ipcMain.handle('save-file', async (event, payload) => {
     trackExportResult('failed');
     return {
       saved: false,
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage(error),
     };
   }
 });
@@ -593,7 +618,7 @@ ipcMain.handle('check-updates', async () => {
       return {
         latest: null,
         url: RELEASES_URL,
-        error: `更新服务返回 ${response.status}`,
+        error: t('error.updateService', { status: response.status }),
       };
     }
     const data = await response.json();
@@ -609,7 +634,7 @@ ipcMain.handle('check-updates', async () => {
     return {
       latest: null,
       url: RELEASES_URL,
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage(error),
     };
   }
 });
@@ -619,6 +644,16 @@ ipcMain.handle('set-theme', (event, theme) => {
   saveTheme(mode);
   const win = BrowserWindow.fromWebContents(event.sender);
   applyTheme(mode, win);
+  return { ok: true };
+});
+
+ipcMain.handle('set-language', (_event, language) => {
+  setLanguage(language);
+  buildMenu();
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.setTitle(t('app.name'));
+  }
+  applyAboutPanelOptions();
   return { ok: true };
 });
 
@@ -637,13 +672,7 @@ if (!gotLock) {
   });
 
   app.whenReady().then(() => {
-    if (isMac) {
-      app.setAboutPanelOptions({
-        applicationName: 'Copycraft 字帖工坊',
-        applicationVersion: app.getVersion(),
-        credits: '使用 React + Electron 构建的字帖生成器',
-      });
-    }
+    applyAboutPanelOptions();
     let licenseStatus = null;
     try {
       licenseManager = createLicense({ userDataDir: app.getPath('userData') });

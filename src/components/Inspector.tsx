@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { FileText, Info, Lightbulb, RotateCcw, ShieldCheck } from 'lucide-react';
-import { DEFAULT_CONTENT, SHEET_BY_ID, TOOL_BY_ID, textKeyFor } from '../lib/constants';
+import { SHEET_LABEL_KEYS, TOOL_LABEL_KEYS, type I18nKey } from '../i18n';
+import { useT } from '../i18n/useT';
+import { DEFAULT_CONTENT, SHEET_BY_ID, textKeyFor } from '../lib/constants';
 import { useApp } from '../store/useApp';
 import type { SheetSettings, TextSheetType, ToolType } from '../types';
 import { Section } from './controls';
@@ -11,19 +13,19 @@ import {
   type SettingsValue,
 } from './inspectorSchema';
 
-const CONTENT_HINT: Record<TextSheetType, string> = {
-  hanzi: '每行一组内容，自动循环铺满整行',
-  hanziWords: '每行「生字 词语1 词语2」，生字与组词一起练',
-  hanziParagraph: '输入一段文字，按格子自动排版',
-  name: '每行一个名字，首行用于页眉姓名卡',
-  pinyin: '每行一组拼音字母，自动循环练习',
-  stroke: '每行一个基本笔画',
-  englishLetter: '每行一组字母或单词，自动循环练习',
-  englishParagraph: '输入英文段落，自动按行排版',
-  number: '每行一个数字',
-  dictation: '每行一个词语，自动生成拼音和空格',
-  englishWords: '每行「单词|中文」，下方自动留空白四线格',
-  poem: '第一行「诗题|作者|朝代」，其后每行一句',
+const CONTENT_HINT_KEYS: Record<TextSheetType, I18nKey> = {
+  hanzi: 'inspector.hint.hanzi',
+  hanziWords: 'inspector.hint.hanziWords',
+  hanziParagraph: 'inspector.hint.hanziParagraph',
+  name: 'inspector.hint.name',
+  pinyin: 'inspector.hint.pinyin',
+  stroke: 'inspector.hint.stroke',
+  englishLetter: 'inspector.hint.englishLetter',
+  englishParagraph: 'inspector.hint.englishParagraph',
+  number: 'inspector.hint.number',
+  dictation: 'inspector.hint.dictation',
+  englishWords: 'inspector.hint.englishWords',
+  poem: 'inspector.hint.poem',
 };
 
 function Panel({
@@ -39,6 +41,7 @@ function Panel({
   onReset?: () => void;
   children: ReactNode;
 }) {
+  const t = useT();
   return (
     <aside
       className={`inspector ${open ? 'is-open' : 'is-closed'}`}
@@ -55,8 +58,8 @@ function Panel({
             type="button"
             className="icon-btn"
             onClick={onReset}
-            title="恢复默认设置"
-            aria-label="恢复默认设置"
+            title={t('inspector.resetTitle')}
+            aria-label={t('inspector.resetTitle')}
           >
             <RotateCcw size={14} />
           </button>
@@ -66,7 +69,7 @@ function Panel({
       <div className="inspector-scroll">
         {children}
         <div className="inspector-footer">
-          <ShieldCheck size={13} /> 字帖内容在本地生成，不会上传
+          <ShieldCheck size={13} /> {t('inspector.localNotice')}
         </div>
       </div>
     </aside>
@@ -74,6 +77,7 @@ function Panel({
 }
 
 function SheetInspector({ open }: { open: boolean }) {
+  const t = useT();
   const activeType = useApp((s) => s.activeType);
   const meta = SHEET_BY_ID[activeType];
   const settings = useApp((s) => s.settingsByType[activeType]);
@@ -88,28 +92,35 @@ function SheetInspector({ open }: { open: boolean }) {
   const onChange = (key: SettingsKey, value: SettingsValue) =>
     update({ [key]: value } as Partial<SheetSettings>);
 
+  const hint = contentKey ? t(CONTENT_HINT_KEYS[contentKey]) : '';
+
   return (
-    <Panel open={open} title={meta.label} subtitle="内容与版式" onReset={resetActive}>
+    <Panel
+      open={open}
+      title={t(SHEET_LABEL_KEYS[meta.id])}
+      subtitle={t('inspector.sheetSubtitle')}
+      onReset={resetActive}
+    >
       {contentKey && (
-        <Section label="内容" icon={<FileText size={14} />}>
+        <Section label={t('inspector.content')} icon={<FileText size={14} />}>
           <textarea
             className="content-editor"
             value={content}
             spellCheck={false}
-            aria-label="字帖内容"
-            placeholder={CONTENT_HINT[contentKey]}
+            aria-label={t('inspector.contentAria')}
+            placeholder={hint}
             onChange={(e) => setContent(e.target.value)}
           />
           <div className="editor-meta">
-            <span>{CONTENT_HINT[contentKey]}</span>
-            <span>{Array.from(content).length} 字</span>
+            <span>{hint}</span>
+            <span>{t('inspector.charCount', { count: Array.from(content).length })}</span>
           </div>
           <button
             type="button"
             className="text-button"
             onClick={() => setContent(DEFAULT_CONTENT[contentKey])}
           >
-            恢复示例内容
+            {t('inspector.resetContent')}
           </button>
         </Section>
       )}
@@ -127,13 +138,18 @@ function SheetInspector({ open }: { open: boolean }) {
 }
 
 function WorkbookInspector({ open }: { open: boolean }) {
+  const t = useT();
   const workbook = useApp((s) => s.workbook);
   const exitWorkbook = useApp((s) => s.exitWorkbook);
   if (!workbook) return null;
 
   return (
-    <Panel open={open} title="练习册" subtitle="多张字帖合成">
-      <Section label="包含字帖" icon={<FileText size={14} />}>
+    <Panel
+      open={open}
+      title={t('inspector.workbook')}
+      subtitle={t('inspector.workbookSubtitle')}
+    >
+      <Section label={t('inspector.includedSheets')} icon={<FileText size={14} />}>
         <div className="workbook-list">
           {workbook.sections.map((section, index) => {
             const meta = SHEET_BY_ID[section.type];
@@ -142,17 +158,15 @@ function WorkbookInspector({ open }: { open: boolean }) {
                 <span className="workbook-row-index">{index + 1}</span>
                 <span className="workbook-row-text">
                   <strong>{section.title}</strong>
-                  <small>{meta.label}</small>
+                  <small>{t(SHEET_LABEL_KEYS[meta.id])}</small>
                 </span>
               </div>
             );
           })}
         </div>
-        <p className="inspector-note">
-          练习册按顺序渲染全部字帖，导出 PDF / Word 时会一次输出所有页面。修改单张字帖的设置请先退出练习册。
-        </p>
+        <p className="inspector-note">{t('inspector.workbookNote')}</p>
         <button type="button" className="text-button" onClick={exitWorkbook}>
-          退出练习册，返回单张编辑
+          {t('inspector.exitWorkbookDesc')}
         </button>
       </Section>
     </Panel>
@@ -160,18 +174,18 @@ function WorkbookInspector({ open }: { open: boolean }) {
 }
 
 function ToolInspector({ open, tool }: { open: boolean; tool: ToolType }) {
-  const meta = TOOL_BY_ID[tool];
+  const t = useT();
   return (
-    <Panel open={open} title={meta.label} subtitle="交互工具">
-      <Section label="说明" icon={<Info size={14} />}>
-        <p className="inspector-note">
-          输入一个汉字，即可查看标准笔顺动画。点击「描红练习」，用鼠标或手指按照笔顺书写，写错时会给出提示。
-        </p>
+    <Panel
+      open={open}
+      title={t(TOOL_LABEL_KEYS[tool])}
+      subtitle={t('inspector.toolSubtitle')}
+    >
+      <Section label={t('inspector.description')} icon={<Info size={14} />}>
+        <p className="inspector-note">{t('inspector.strokeQueryNote')}</p>
       </Section>
-      <Section label="小提示" icon={<Lightbulb size={14} />}>
-        <p className="inspector-note">
-          笔顺数据来自开源项目 hanzi-writer-data，首次查询需要联网加载对应汉字的数据。
-        </p>
+      <Section label={t('inspector.tips')} icon={<Lightbulb size={14} />}>
+        <p className="inspector-note">{t('inspector.strokeDataNote')}</p>
       </Section>
     </Panel>
   );

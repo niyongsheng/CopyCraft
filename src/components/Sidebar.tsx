@@ -26,6 +26,12 @@ import {
   Waves,
   X,
 } from 'lucide-react';
+import {
+  GROUP_LABEL_KEYS,
+  SHEET_LABEL_KEYS,
+  TOOL_LABEL_KEYS,
+} from '../i18n';
+import { useT } from '../i18n/useT';
 import { SHEETS, TOOLS } from '../lib/constants';
 import { APP_VERSION } from '../lib/version';
 import { useApp } from '../store/useApp';
@@ -65,6 +71,7 @@ const TOOL_ICONS: Record<ToolType, LucideIcon> = {
 };
 
 export function Sidebar({ open }: { open: boolean }) {
+  const t = useT();
   const activeType = useApp((s) => s.activeType);
   const activeTool = useApp((s) => s.activeTool);
   const workbook = useApp((s) => s.workbook);
@@ -83,17 +90,17 @@ export function Sidebar({ open }: { open: boolean }) {
         <div className="sidebar-intro">
           <div className="sidebar-intro-eyebrow">
             <span className="status-dot" />
-            工作台
+            {t('sidebar.workbench')}
           </div>
-          <div className="sidebar-intro-title">开始制作字帖</div>
-          <div className="sidebar-intro-sub">选择模板，右侧实时预览</div>
+          <div className="sidebar-intro-title">{t('sidebar.introTitle')}</div>
+          <div className="sidebar-intro-sub">{t('sidebar.introSub')}</div>
           <button
             type="button"
             className="sidebar-preset"
             onClick={() => setPresetOpen(true)}
           >
             <LibraryBig size={14} />
-            模板库 / 课本同步
+            {t('sidebar.presetLibrary')}
           </button>
         </div>
 
@@ -101,10 +108,14 @@ export function Sidebar({ open }: { open: boolean }) {
           const sheets = SHEETS.filter((sheet) => sheet.group === group);
           const tools = TOOLS.filter((tool) => tool.group === group);
           if (sheets.length === 0 && tools.length === 0) return null;
+          const groupLabel = t(GROUP_LABEL_KEYS[group]);
           return (
             <div className="sheet-group" key={group}>
-              <div className="sidebar-label">{group}</div>
-              <nav className="sheet-list" aria-label={`${group}字帖`}>
+              <div className="sidebar-label">{groupLabel}</div>
+              <nav
+                className="sheet-list"
+                aria-label={t('sidebar.groupAria', { group: groupLabel })}
+              >
                 {sheets.map((sheet) => {
                   const Icon = SHEET_ICONS[sheet.id];
                   const active = !activeTool && !workbook && activeType === sheet.id;
@@ -119,7 +130,9 @@ export function Sidebar({ open }: { open: boolean }) {
                       <span className="sheet-item-icon">
                         <Icon size={15} strokeWidth={1.9} />
                       </span>
-                      <span className="sheet-item-label">{sheet.label}</span>
+                      <span className="sheet-item-label">
+                        {t(SHEET_LABEL_KEYS[sheet.id])}
+                      </span>
                     </button>
                   );
                 })}
@@ -137,7 +150,9 @@ export function Sidebar({ open }: { open: boolean }) {
                       <span className="sheet-item-icon">
                         <Icon size={15} strokeWidth={1.9} />
                       </span>
-                      <span className="sheet-item-label">{tool.label}</span>
+                      <span className="sheet-item-label">
+                        {t(TOOL_LABEL_KEYS[tool.id])}
+                      </span>
                     </button>
                   );
                 })}
@@ -148,14 +163,14 @@ export function Sidebar({ open }: { open: boolean }) {
       </div>
 
       <div className="sidebar-footer">
-        <span className="sidebar-version" title="Copycraft 版本">
+        <span className="sidebar-version" title={t('sidebar.versionTitle')}>
           v{APP_VERSION}
         </span>
         <button
           type="button"
           className="sidebar-license"
           onClick={() => setLicenseOpen(true)}
-          title="查看 MIT 开源许可"
+          title={t('sidebar.licenseTitle')}
         >
           MIT
         </button>

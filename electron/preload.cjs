@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('desktop', {
   saveFile: (payload) => ipcRenderer.invoke('save-file', payload),
   checkUpdates: () => ipcRenderer.invoke('check-updates'),
   setTheme: (theme) => ipcRenderer.invoke('set-theme', theme),
+  setLanguage: (language) => ipcRenderer.invoke('set-language', language),
   licenseStatus: () => ipcRenderer.invoke('license-status'),
   licenseCheck: () => ipcRenderer.invoke('license-check'),
   licenseActivate: (code) => ipcRenderer.invoke('license-activate', code),
