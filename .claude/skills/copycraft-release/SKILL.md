@@ -1,9 +1,9 @@
 ---
 name: copycraft-release
-description: 发布 Copycraft 新版本：统一版本号、提交、推送 main 自动部署 Pages、手动触发桌面端打包并发布 GitHub Release、验证产物
+description: 发布 CopyCraft 新版本：统一版本号、提交、推送 main 自动部署 Pages、手动触发桌面端打包并发布 GitHub Release、验证产物
 ---
 
-# 发布新版本 — Copycraft
+# 发布新版本 — CopyCraft
 
 当用户要求「发版 / 发布新版本 / release」时执行本流程。
 
@@ -135,16 +135,16 @@ gh release view vX.Y.Z --json tagName,isDraft,isPrerelease,publishedAt,assets \
 
 预期资产（以 `X.Y.Z` 为例）：
 
-- macOS：`Copycraft-X.Y.Z-mac-arm64.dmg`、`Copycraft-X.Y.Z-mac-x64.dmg`
-- macOS：`Copycraft-X.Y.Z-mac-arm64.pkg`、`Copycraft-X.Y.Z-mac-x64.pkg`
-- macOS：`Copycraft-X.Y.Z-mac-arm64.zip`、`Copycraft-X.Y.Z-mac-x64.zip`
-- Windows：`Copycraft-Setup-X.Y.Z-x64.exe`、`Copycraft-Portable-X.Y.Z-x64.exe`
+- macOS：`CopyCraft-X.Y.Z-mac-arm64.dmg`、`CopyCraft-X.Y.Z-mac-x64.dmg`
+- macOS：`CopyCraft-X.Y.Z-mac-arm64.pkg`、`CopyCraft-X.Y.Z-mac-x64.pkg`
+- macOS：`CopyCraft-X.Y.Z-mac-arm64.zip`、`CopyCraft-X.Y.Z-mac-x64.zip`
+- Windows：`CopyCraft-Setup-X.Y.Z-x64.exe`、`CopyCraft-Portable-X.Y.Z-x64.exe`
 - 如生成的 `*.blockmap` 文件
 
 校验客户端更新检查能看到本次版本：
 
 ```bash
-gh api repos/niyongsheng/Copycraft/releases/latest --jq '.tag_name'
+gh api repos/niyongsheng/CopyCraft/releases/latest --jq '.tag_name'
 ```
 
 应输出 `vX.Y.Z`。若输出旧版本，检查是否误标为 prerelease 或 draft。
@@ -167,7 +167,7 @@ gh api repos/niyongsheng/Copycraft/releases/latest --jq '.tag_name'
 
 ```bash
 gh secret list                          # 需要 COPYCRAFT_LICENSE_SECRET
-gh api repos/niyongsheng/Copycraft/pages  # Source 应为 GitHub Actions，cname 为 copycraft.looplooptech.com
+gh api repos/niyongsheng/CopyCraft/pages  # Source 应为 GitHub Actions，cname 为 copycraft.looplooptech.com
 ```
 
 - macOS 目前无需 Apple Developer ID（`electron-builder.yml` 中 `mac.identity: "-"` 为 ad-hoc 签名）。
