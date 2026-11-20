@@ -51,6 +51,7 @@ jobs:
         release/*.zip
         release/*.exe
         release/*.blockmap
+        release/latest*.yml
 
   publish:
     name: Publish release assets

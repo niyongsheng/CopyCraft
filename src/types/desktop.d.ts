@@ -78,6 +78,22 @@ export interface AnalyticsState {
   active: boolean;
 }
 
+export type DesktopUpdatePhase =
+  | 'idle'
+  | 'checking'
+  | 'latest'
+  | 'available'
+  | 'downloading'
+  | 'downloaded'
+  | 'error';
+
+export interface DesktopUpdateStatus {
+  phase: DesktopUpdatePhase;
+  latest?: string;
+  percent?: number;
+  message?: string;
+}
+
 export interface DesktopBridge {
   isElectron: true;
   platform: 'darwin' | 'win32' | 'linux' | string;
@@ -93,6 +109,10 @@ export interface DesktopBridge {
     url: string;
     error?: string;
   }>;
+  updateState: () => Promise<DesktopUpdateStatus>;
+  installUpdate: () => Promise<{ ok: boolean; error?: string }>;
+  /** 自动更新状态变化。返回取消订阅函数。 */
+  onUpdateStatus: (callback: (status: DesktopUpdateStatus) => void) => () => void;
   setTheme: (theme: 'light' | 'dark') => Promise<{ ok: boolean }>;
   /** Sync the interface language used by native menus and dialogs. */
   setLanguage: (language: string) => Promise<{ ok: boolean }>;

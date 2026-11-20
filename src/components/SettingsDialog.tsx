@@ -33,7 +33,7 @@ import {
 import { copyText } from '../lib/clipboard';
 import { formatFingerprint, formatLicenseDate } from '../lib/license';
 import { isDesktop } from '../lib/platform';
-import { REPO_URL } from '../lib/updates';
+import { MANUAL_DOWNLOAD_URL, REPO_URL } from '../lib/updates';
 import { APP_VERSION } from '../lib/version';
 import { useApp } from '../store/useApp';
 import {
@@ -62,7 +62,7 @@ export function SettingsDialog() {
   const language = useApp((s) => s.language);
   const setLanguage = useApp((s) => s.setLanguage);
   const setSettingsOpen = useApp((s) => s.setSettingsOpen);
-  const { state: update, checking, check, openRelease } = useUpdateCheck();
+  const { state: update, checking, check, openRelease, install } = useUpdateCheck();
 
   const desktop = isDesktop();
   const licenseStatus = useLicense((s) => s.status);
@@ -569,6 +569,24 @@ export function SettingsDialog() {
                     <ArrowUpRight size={15} />
                   </button>
                 )}
+                {update.phase === 'downloading' && (
+                  <div className="update-note">
+                    <Loader2 size={13} className="spin" />{' '}
+                    {t('settings.updateDownloading', {
+                      version: update.latest ?? '',
+                      percent: update.percent ?? 0,
+                    })}
+                  </div>
+                )}
+                {update.phase === 'downloaded' && (
+                  <button type="button" className="update-banner" onClick={() => void install()}>
+                    <span>
+                      <strong>{t('settings.updateReady', { version: update.latest ?? '' })}</strong>
+                      <small>{t('settings.updateRestartHint')}</small>
+                    </span>
+                    <RefreshCw size={15} />
+                  </button>
+                )}
                 {update.phase === 'latest' && (
                   <div className="update-note is-ok">
                     <Check size={13} />{' '}
@@ -576,12 +594,27 @@ export function SettingsDialog() {
                   </div>
                 )}
                 {update.phase === 'error' && (
-                  <div className="update-note is-error">
-                    <Info size={13} />{' '}
-                    {t('settings.updateFailed', {
-                      error: update.message ?? t('common.unknownError'),
-                    })}
-                  </div>
+                  <>
+                    <div className="update-note is-error">
+                      <Info size={13} />{' '}
+                      {t('settings.updateFailed', {
+                        error: update.message ?? t('common.unknownError'),
+                      })}
+                    </div>
+                    <button
+                      type="button"
+                      className="update-banner"
+                      onClick={() =>
+                        window.open(MANUAL_DOWNLOAD_URL, '_blank', 'noopener,noreferrer')
+                      }
+                    >
+                      <span>
+                        <strong>{t('settings.manualUpdate')}</strong>
+                        <small>{t('settings.manualUpdateHint')}</small>
+                      </span>
+                      <ArrowUpRight size={15} />
+                    </button>
+                  </>
                 )}
               </>
             )}

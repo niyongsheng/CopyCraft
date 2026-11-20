@@ -2,6 +2,8 @@ const REPO = 'niyongsheng/CopyCraft';
 
 export const REPO_URL = `https://github.com/${REPO}`;
 export const RELEASES_URL = `https://github.com/${REPO}/releases`;
+export const MANUAL_DOWNLOAD_URL =
+  'https://pan.baidu.com/s/13Fdi5URwlZdvJKHMmYfZIg?pwd=58f7';
 
 export interface UpdateCheckResult {
   current: string;

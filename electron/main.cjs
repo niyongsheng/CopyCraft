@@ -17,6 +17,7 @@ const fsp = require('node:fs/promises');
 const { createLicense } = require('./license.cjs');
 const { createAnalytics } = require('./analytics.cjs');
 const { setLanguage, t } = require('./i18n.cjs');
+const { autoUpdater } = require('electron-updater');
 
 const isMac = process.platform === 'darwin';
 const isWin = process.platform === 'win32';
@@ -42,8 +43,59 @@ let mainWindow = null;
 let exportInProgress = false;
 let licenseManager = null;
 
+const autoUpdateEnabled = app.isPackaged && !DEV_URL;
+let updateStatus = { phase: 'idle' };
+let pendingUpdateVersion = null;
+
 function errorMessage(error) {
   return error instanceof Error ? error.message : String(error);
+}
+
+function broadcastUpdateStatus(status) {
+  updateStatus = status;
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('update-status', status);
+  }
+}
+
+function initAutoUpdater() {
+  if (!autoUpdateEnabled) return;
+
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.logger = console;
+
+  autoUpdater.on('checking-for-update', () => {
+    broadcastUpdateStatus({ phase: 'checking' });
+  });
+  autoUpdater.on('update-available', (info) => {
+    pendingUpdateVersion = info.version;
+    broadcastUpdateStatus({ phase: 'available', latest: info.version });
+  });
+  autoUpdater.on('update-not-available', () => {
+    broadcastUpdateStatus({ phase: 'latest' });
+  });
+  autoUpdater.on('download-progress', (progress) => {
+    broadcastUpdateStatus({
+      phase: 'downloading',
+      latest: pendingUpdateVersion || undefined,
+      percent: Math.round(progress.percent),
+    });
+  });
+  autoUpdater.on('update-downloaded', (info) => {
+    pendingUpdateVersion = info.version;
+    broadcastUpdateStatus({ phase: 'downloaded', latest: info.version });
+  });
+  autoUpdater.on('error', (error) => {
+    broadcastUpdateStatus({ phase: 'error', message: errorMessage(error) });
+  });
+
+  setTimeout(() => {
+    autoUpdater.checkForUpdatesAndNotify().catch((error) => {
+      console.error('[copycraft] auto update check failed:', error);
+      broadcastUpdateStatus({ phase: 'error', message: errorMessage(error) });
+    });
+  }, 5000);
 }
 
 function notifyLicenseChanged(win) {
@@ -598,6 +650,19 @@ ipcMain.handle('save-file', async (event, payload) => {
 });
 
 ipcMain.handle('check-updates', async () => {
+  if (autoUpdateEnabled) {
+    try {
+      const result = await autoUpdater.checkForUpdates();
+      analytics?.track('update_check', { result: 'ok' });
+      return {
+        latest: result?.updateInfo?.version ?? null,
+        url: RELEASES_URL,
+      };
+    } catch (error) {
+      analytics?.track('update_check', { result: 'error', stage: 'auto-updater' });
+      return { latest: null, url: RELEASES_URL, error: errorMessage(error) };
+    }
+  }
   try {
     const response = await net.fetch(
       `https://api.github.com/repos/${UPDATE_REPO}/releases/latest`,
@@ -639,6 +704,16 @@ ipcMain.handle('check-updates', async () => {
       error: errorMessage(error),
     };
   }
+});
+
+ipcMain.handle('update-state', () => updateStatus);
+
+ipcMain.handle('install-update', () => {
+  if (!autoUpdateEnabled) {
+    return { ok: false, error: t('error.updateUnavailable') };
+  }
+  setImmediate(() => autoUpdater.quitAndInstall(false, true));
+  return { ok: true };
 });
 
 ipcMain.handle('set-theme', (event, theme) => {
@@ -692,6 +767,7 @@ if (!gotLock) {
     const state = ensureVisible(loadWindowState());
     mainWindow = createWindow(state);
     buildMenu();
+    initAutoUpdater();
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {

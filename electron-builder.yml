@@ -4,6 +4,13 @@ copyright: Copyright © 2026 CopyCraft
 artifactName: CopyCraft-${version}-${os}-${arch}.${ext}
 afterPack: ./build/after-pack.cjs
 
+# Enables electron-updater: electron-builder writes app-update.yml into the
+# package and latest.yml / latest-mac.yml next to the installers.
+publish:
+  provider: github
+  owner: niyongsheng
+  repo: CopyCraft
+
 directories:
   output: release
   buildResources: build
