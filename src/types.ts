@@ -15,7 +15,13 @@ export type SheetType =
   | 'division'
   | 'multiplication'
   | 'vertical'
-  | 'clock';
+  | 'expression'
+  | 'abacus'
+  | 'clock'
+  | 'dictation'
+  | 'englishWords'
+  | 'blank'
+  | 'poem';
 
 export type ToolType = 'strokeQuery';
 
@@ -39,7 +45,10 @@ export type SheetKind =
   | 'pen'
   | 'math'
   | 'vertical'
-  | 'clock';
+  | 'expression'
+  | 'abacus'
+  | 'clock'
+  | 'poem';
 
 export interface SheetSettings {
   /* layout */
@@ -74,6 +83,25 @@ export interface SheetSettings {
   mathRange: number;
   mathMode: 'calc' | 'fill';
   count: number;
+  /* vertical math */
+  verticalOperation: 'add' | 'sub' | 'both' | 'mul' | 'div' | 'mixed';
+  verticalDigits: 2 | 3;
+  verticalCarry: 'any' | 'require' | 'avoid';
+  verticalAllowRemainder: boolean;
+  /* abacus */
+  abacusMode: 'read' | 'draw' | 'calc';
+  abacusRods: 1 | 2 | 3 | 4;
+  abacusTerms: 2 | 3 | 4;
+  /* expression */
+  expressionOperation: 'addSub' | 'mulDiv' | 'mixed';
+  expressionSteps: 2 | 3;
+  expressionParentheses: boolean;
+  /* english words */
+  englishWordShowMeaning: boolean;
+  /* poem */
+  poemVertical: boolean;
+  poemShowAuthor: boolean;
+  poemShowNotes: boolean;
   /* clock */
   clockMode: 'read' | 'draw';
   clockFace: 'arabic' | 'roman' | 'none';
@@ -88,6 +116,9 @@ export type TextSheetType =
   | 'hanziParagraph'
   | 'name'
   | 'pinyin'
+  | 'dictation'
+  | 'englishWords'
+  | 'poem'
   | 'stroke'
   | 'englishLetter'
   | 'englishParagraph'

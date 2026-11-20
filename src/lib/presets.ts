@@ -1,4 +1,4 @@
-import type { SheetSettings, SheetType, TextSheetType } from '../types';
+import type { SheetSettings, SheetType } from '../types';
 import { GRADE_PRESETS, GRADE_WORKBOOK_PRESETS } from './gradePresets';
 
 export const GRADE_ORDER = [
@@ -15,6 +15,7 @@ export type PresetCategory =
   | 'structure'
   | 'radical'
   | 'words'
+  | 'poem'
   | 'workbook';
 
 export type Semester = '上册' | '下册';
@@ -36,7 +37,7 @@ export interface SheetPreset {
 }
 
 export interface WorkbookSection {
-  type: TextSheetType;
+  type: SheetType;
   title: string;
   content: string;
   settings?: Partial<SheetSettings>;
@@ -65,6 +66,7 @@ export const PRESET_CATEGORIES: {
   { id: 'structure', label: '结构规律', hint: '按结构类型分组，先懂规则再动笔' },
   { id: 'radical', label: '偏旁部首', hint: '同偏旁集中练，举一反三' },
   { id: 'words', label: '生字组词', hint: '生字和词语一起练' },
+  { id: 'poem', label: '古诗词', hint: '公版诗词，支持拼音、竖排和注释' },
   { id: 'workbook', label: '练习册', hint: '多张字帖合成一本，直接导出' },
 ];
 
@@ -685,6 +687,99 @@ export const SHEET_PRESETS: SheetPreset[] = [
     ),
     settings: { gridSize: 44, fontSize: 72, showPinyin: true, titleHeight: 70 },
   },
+  {
+    id: 'poem-jingyesi',
+    category: 'poem',
+    title: '静夜思 · 李白',
+    description: '五言绝句，适合低年级带拼音临写和默写。',
+    badge: '古诗词',
+    tags: ['唐诗', '李白', '五言绝句'],
+    type: 'poem',
+    pageTitle: '静夜思',
+    content:
+      '静夜思|李白|唐\n床前明月光，\n疑是地上霜。\n举头望明月，\n低头思故乡。\n注：疑，好像。',
+    settings: {
+      showPinyin: true,
+      poemVertical: false,
+      poemShowAuthor: true,
+      poemShowNotes: true,
+      titleHeight: 70,
+    },
+  },
+  {
+    id: 'poem-chunxiao',
+    category: 'poem',
+    title: '春晓 · 孟浩然',
+    description: '春天的清晨，适合一年级起步和亲子共读。',
+    badge: '古诗词',
+    tags: ['唐诗', '孟浩然', '春天'],
+    type: 'poem',
+    pageTitle: '春晓',
+    content: '春晓|孟浩然|唐\n春眠不觉晓，\n处处闻啼鸟。\n夜来风雨声，\n花落知多少。',
+    settings: {
+      showPinyin: true,
+      poemVertical: false,
+      poemShowAuthor: true,
+      poemShowNotes: false,
+      titleHeight: 70,
+    },
+  },
+  {
+    id: 'poem-yonge',
+    category: 'poem',
+    title: '咏鹅 · 骆宾王',
+    description: '画面感强的启蒙诗，适合低年级描红。',
+    badge: '古诗词',
+    tags: ['唐诗', '骆宾王', '启蒙'],
+    type: 'poem',
+    pageTitle: '咏鹅',
+    content: '咏鹅|骆宾王|唐\n鹅，鹅，鹅，\n曲项向天歌。\n白毛浮绿水，\n红掌拨清波。',
+    settings: {
+      showPinyin: true,
+      poemVertical: false,
+      poemShowAuthor: true,
+      poemShowNotes: false,
+      titleHeight: 70,
+    },
+  },
+  {
+    id: 'poem-dengguanquelou',
+    category: 'poem',
+    title: '登鹳雀楼 · 王之涣',
+    description: '经典五言绝句，适合竖排作品纸练习。',
+    badge: '古诗词',
+    tags: ['唐诗', '王之涣', '五言绝句'],
+    type: 'poem',
+    pageTitle: '登鹳雀楼',
+    content:
+      '登鹳雀楼|王之涣|唐\n白日依山尽，\n黄河入海流。\n欲穷千里目，\n更上一层楼。',
+    settings: {
+      showPinyin: true,
+      poemVertical: true,
+      poemShowAuthor: true,
+      poemShowNotes: false,
+      titleHeight: 70,
+    },
+  },
+  {
+    id: 'poem-minnong',
+    category: 'poem',
+    title: '悯农 · 李绅',
+    description: '珍惜粮食主题，适合配合德育和默写。',
+    badge: '古诗词',
+    tags: ['唐诗', '李绅', '德育'],
+    type: 'poem',
+    pageTitle: '悯农',
+    content:
+      '悯农|李绅|唐\n锄禾日当午，\n汗滴禾下土。\n谁知盘中餐，\n粒粒皆辛苦。',
+    settings: {
+      showPinyin: true,
+      poemVertical: false,
+      poemShowAuthor: true,
+      poemShowNotes: false,
+      titleHeight: 70,
+    },
+  },
   ...GRADE_PRESETS,
 ];
 
@@ -696,8 +791,8 @@ export const WORKBOOK_PRESETS: WorkbookPreset[] = [
     semester: '上册',
     title: '四年级上册 · 第一单元练习册',
     description:
-      '按「结构 → 生字 → 组词 → 段落」排好顺序，一键生成 4 张字帖，导出就是一本练习册。',
-    badge: '4 个章节 · 示例',
+      '按「结构 → 生字 → 组词 → 段落 → 空白练习」排好顺序，一键生成 5 张字帖，导出就是一本练习册。',
+    badge: '5 个章节 · 示例',
     tags: ['四年级', '第一单元', '练习册'],
     sections: [
       {
@@ -732,6 +827,12 @@ export const WORKBOOK_PRESETS: WorkbookPreset[] = [
         title: '第四步 · 段落临写',
         content: PARAGRAPH_SPRING,
         settings: { gridSize: 32, fontSize: 68, showPinyin: false, titleHeight: 70 },
+      },
+      {
+        type: 'blank',
+        title: '第五步 · 空白练习页',
+        content: '',
+        settings: { gridStyle: 'fang', gridSize: 40, showBorder: true, titleHeight: 70 },
       },
     ],
   },

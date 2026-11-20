@@ -1,9 +1,15 @@
+import { abacusViewBox } from './abacus';
 import { PAGE_HEIGHT, PAGE_WIDTH, SHEET_BY_ID } from './constants';
 import { fontStack } from './fonts';
 import type { CharData } from './hanziData';
 import { measureText } from './measure';
 import { isHan, pinyinOf, uniqueHanChars } from './pinyin';
+import { generateAbacus, type AbacusProblemData } from './generators/abacus';
 import { generateClocks } from './generators/clock';
+import {
+  generateExpression,
+  type ExpressionProblemData,
+} from './generators/expression';
 import { generateMath, generateVertical } from './generators/math';
 import { PATTERNS } from './generators/patterns';
 import type {
@@ -75,6 +81,7 @@ export interface FourLineRowModel {
   repeatCount: number;
   paragraph: boolean;
   empty: boolean;
+  meaning?: string;
 }
 
 export interface FourLinePageModel {
@@ -118,6 +125,44 @@ export interface VerticalModel {
   pages: VerticalProblem[][];
 }
 
+export interface PoemModel {
+  kind: 'poem';
+  metrics: Metrics;
+  vertical: boolean;
+  showPinyin: boolean;
+  showAuthor: boolean;
+  title: string;
+  author: string;
+  lines: string[];
+  notes: string[];
+  showNotes: boolean;
+  cellSize: number;
+  pinyinH: number;
+  pinyinSize: number;
+}
+
+export interface ExpressionModel {
+  kind: 'expression';
+  metrics: Metrics;
+  fontPx: number;
+  cols: number;
+  blockHeight: number;
+  steps: number;
+  pages: ExpressionProblemData[][];
+}
+
+export interface AbacusModel {
+  kind: 'abacus';
+  metrics: Metrics;
+  mode: 'read' | 'draw' | 'calc';
+  rods: number;
+  cols: number;
+  blockHeight: number;
+  abacusWidth: number;
+  fontPx: number;
+  pages: AbacusProblemData[][];
+}
+
 export interface ClockModel {
   kind: 'clock';
   metrics: Metrics;
@@ -135,6 +180,9 @@ export type SheetModel =
   | PenModel
   | MathModel
   | VerticalModel
+  | ExpressionModel
+  | PoemModel
+  | AbacusModel
   | ClockModel;
 
 function chunk<T>(items: T[], size: number): T[][] {
@@ -202,6 +250,8 @@ function buildGridModel(
   content: string,
 ): GridModel {
   if (type === 'hanziWords') return buildWordGridModel(settings, content);
+  if (type === 'dictation') return buildDictationModel(settings, content);
+  if (type === 'blank') return buildBlankModel(settings);
 
   const showPinyin = settings.showPinyin && (type === 'hanzi' || type === 'name');
   const { metrics, cols, cellW, pinyinH, rowH, rowsPerPage, charPx } = gridLayout(
@@ -275,6 +325,62 @@ function buildGridModel(
     charPx,
     cols,
     pages: paginate(rows, rowsPerPage, blank).map((pageRows) => ({ rows: pageRows })),
+  };
+}
+
+/** 看拼音写词语 / 生字默写 / 听写纸：词语只提供拼音和空格。 */
+function buildDictationModel(settings: SheetSettings, content: string): GridModel {
+  const showPinyin = settings.showPinyin;
+  const { metrics, cols, cellW, pinyinH, rowH, rowsPerPage, charPx } = gridLayout(
+    settings,
+    showPinyin,
+  );
+  const blank = () => blankRow(cols);
+  const rows: GridRowModel[] = [];
+
+  for (const line of content.split('\n')) {
+    const chars = Array.from(line.trim()).filter((char) => char.trim() !== '');
+    if (chars.length === 0) continue;
+    const cells: CellModel[] = chars.map((char) => ({
+      text: '',
+      pinyin: showPinyin ? pinyinOf(char) : '',
+      model: false,
+    }));
+    while (cells.length < cols) cells.push({ text: '', pinyin: '', model: false });
+    rows.push({ cells: cells.slice(0, cols) });
+  }
+
+  if (rows.length === 0) rows.push(blank());
+
+  return {
+    kind: 'grid',
+    metrics,
+    cellW,
+    rowH,
+    pinyinH,
+    charPx,
+    cols,
+    pages: paginate(rows, rowsPerPage, blank).map((pageRows) => ({ rows: pageRows })),
+  };
+}
+
+/** 空白练习纸：整页空白格子，仅由格子样式和标题决定。 */
+function buildBlankModel(settings: SheetSettings): GridModel {
+  const { metrics, cols, cellW, rowH, pinyinH, rowsPerPage, charPx } = gridLayout(
+    settings,
+    false,
+  );
+  const blank = () => blankRow(cols);
+  const rows: GridRowModel[] = Array.from({ length: rowsPerPage }, blank);
+  return {
+    kind: 'grid',
+    metrics,
+    cellW,
+    rowH,
+    pinyinH,
+    charPx,
+    cols,
+    pages: [{ rows }],
   };
 }
 
@@ -480,11 +586,60 @@ function breakParagraph(text: string, maxWidth: number, font: string): string[] 
   return lines;
 }
 
+function buildEnglishWordModel(settings: SheetSettings, content: string): FourLineModel {
+  const metrics = metricsFor(settings);
+  const nominal = Math.max(20, settings.gridSize);
+  const cols = Math.max(1, Math.floor(metrics.contentW / nominal));
+  const cellW = metrics.contentW / cols;
+  const rowH = Math.round(cellW * 1.12);
+  const pitch = rowH + settings.lineSpacing;
+  const rowsPerPage = Math.max(1, Math.floor((metrics.contentH + settings.lineSpacing) / pitch));
+  const charPx = cellW * (settings.fontSize / 100);
+  const rows: FourLineRowModel[] = [];
+
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const [rawWord, ...rest] = trimmed.split('|');
+    const word = rawWord.trim();
+    const meaning = rest.join('|').trim();
+    if (!word) continue;
+    rows.push({
+      text: word,
+      repeatCount: 1,
+      paragraph: false,
+      empty: false,
+      meaning: settings.englishWordShowMeaning ? meaning : '',
+    });
+    // 下方留一行空白四线格，供学生临写。
+    rows.push({ text: '', repeatCount: 0, paragraph: false, empty: false });
+  }
+
+  const pages = paginate(rows, rowsPerPage, () => ({
+    text: '',
+    repeatCount: 0,
+    paragraph: false,
+    empty: true,
+  })).map((pageRows) => ({ rows: pageRows }));
+
+  return {
+    kind: 'fourline',
+    metrics,
+    cellW,
+    rowH,
+    charPx,
+    gap: cellW * 0.6,
+    pages,
+  };
+}
+
 function buildFourLineModel(
   type: SheetType,
   settings: SheetSettings,
   content: string,
 ): FourLineModel {
+  if (type === 'englishWords') return buildEnglishWordModel(settings, content);
+
   const metrics = metricsFor(settings);
   const nominal = Math.max(20, settings.gridSize);
   const cols = Math.max(1, Math.floor(metrics.contentW / nominal));
@@ -567,14 +722,166 @@ function buildMathModel(
 
 function buildVerticalModel(settings: SheetSettings, seed: number): VerticalModel {
   const metrics = metricsFor(settings);
+  const digits = settings.verticalDigits === 3 ? 3 : 2;
+  const heightFactor =
+    settings.verticalOperation === 'div'
+      ? 5.2
+      : settings.verticalOperation === 'mul'
+        ? 6.4
+        : settings.verticalOperation === 'mixed'
+          ? 7.2
+          : 6;
   const fontPx = 30 * (settings.fontSize / 100);
-  const blockHeight = fontPx * 6 + 20;
-  const cols = 4;
+  const blockHeight = fontPx * heightFactor + 20;
+  const cols = digits === 3 ? 3 : 4;
   const rowsPerPage = Math.max(1, Math.floor(metrics.contentH / blockHeight));
   const perPage = cols * rowsPerPage;
   const problems = generateVertical(settings, seed);
   const pages = chunkPages(problems, perPage);
   return { kind: 'vertical', metrics, fontPx, blockHeight, cols, pages };
+}
+
+function buildPoemModel(settings: SheetSettings, content: string): PoemModel {
+  const metrics = metricsFor(settings);
+  const raw = content
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  let title = '';
+  let author = '';
+  let notes: string[] = [];
+  let lines: string[] = [];
+
+  if (raw.length > 0) {
+    const head = raw[0].split('|').map((part) => part.trim());
+    if (head.length >= 2) {
+      title = head[0] ?? '';
+      author = [head[1], head[2]].filter(Boolean).join(' · ');
+      lines = raw.slice(1);
+    } else {
+      title = raw[0];
+      lines = raw.slice(1);
+    }
+  }
+  lines = lines.filter((line) => {
+    const match = line.match(/^(?:注|注释)[：:]\s*(.*)$/);
+    if (!match) return true;
+    if (match[1]) notes.push(match[1]);
+    return false;
+  });
+  if (lines.length === 0) lines = [''];
+
+  const vertical = settings.poemVertical;
+  const showPinyin = settings.showPinyin && !vertical;
+  const maxLine = Math.max(...lines.map((line) => Array.from(line).length), 1);
+
+  const cellSize = vertical
+    ? Math.max(
+        22,
+        Math.min(
+          54,
+          Math.floor(metrics.contentH / Math.max(maxLine, 1)),
+          Math.floor((metrics.contentW - 24) / Math.max(lines.length, 1)),
+        ),
+      )
+    : Math.max(
+        24,
+        Math.min(
+          64,
+          Math.floor(metrics.contentW / maxLine),
+          Math.floor(metrics.contentH / Math.max(1, lines.length * 1.5)),
+        ),
+      );
+
+  const pinyinH = showPinyin ? Math.round(cellSize * 0.34) : 0;
+  return {
+    kind: 'poem',
+    metrics,
+    vertical,
+    showPinyin,
+    showAuthor: settings.poemShowAuthor,
+    title,
+    author,
+    lines,
+    notes,
+    showNotes: settings.poemShowNotes,
+    cellSize,
+    pinyinH,
+    pinyinSize: Math.max(8, Math.round(cellSize * 0.26)),
+  };
+}
+
+function buildExpressionModel(settings: SheetSettings, seed: number): ExpressionModel {
+  const metrics = metricsFor(settings);
+  const fontPx = 26 * (settings.fontSize / 100);
+  const steps = settings.expressionSteps === 3 ? 3 : 2;
+  const cols = 2;
+  const blockHeight = fontPx * (2 + steps * 1.45) + 16;
+  const rowsPerPage = Math.max(1, Math.floor(metrics.contentH / blockHeight));
+  const problems = generateExpression(settings, seed);
+  const pages = chunkPages(problems, cols * rowsPerPage);
+  return {
+    kind: 'expression',
+    metrics,
+    fontPx,
+    cols,
+    blockHeight,
+    steps,
+    pages,
+  };
+}
+
+function buildAbacusModel(settings: SheetSettings, seed: number): AbacusModel {
+  const metrics = metricsFor(settings);
+  const mode = settings.abacusMode;
+  const rods = settings.abacusRods;
+  const problems = generateAbacus(settings, seed);
+
+  if (mode === 'calc') {
+    const fontPx = 24 * (settings.fontSize / 100);
+    const cols =
+      rods === 1 && settings.abacusTerms <= 3
+        ? 2
+        : rods === 2 && settings.abacusTerms <= 2
+          ? 2
+          : 1;
+    const blockHeight = fontPx * 2.6 + 14;
+    const rowsPerPage = Math.max(1, Math.floor(metrics.contentH / blockHeight));
+    const pages = chunkPages(problems, cols * rowsPerPage);
+    return {
+      kind: 'abacus',
+      metrics,
+      mode,
+      rods,
+      cols,
+      blockHeight,
+      abacusWidth: 0,
+      fontPx,
+      pages,
+    };
+  }
+
+  const cols = 3;
+  const cellW = metrics.contentW / cols;
+  const { width: viewWidth, height: viewHeight } = abacusViewBox(rods);
+  const abacusWidth = Math.min(cellW * 0.88, rods * 36 + 30);
+  const abacusHeight = abacusWidth * (viewHeight / viewWidth);
+  const fontPx = 20 * (settings.fontSize / 100);
+  const blockHeight = abacusHeight + 52;
+  const rowsPerPage = Math.max(1, Math.floor(metrics.contentH / blockHeight));
+  const pages = chunkPages(problems, cols * rowsPerPage);
+  return {
+    kind: 'abacus',
+    metrics,
+    mode,
+    rods,
+    cols,
+    blockHeight,
+    abacusWidth,
+    fontPx,
+    pages,
+  };
 }
 
 function buildClockModel(settings: SheetSettings, seed: number): ClockModel {
@@ -624,6 +931,12 @@ export function buildSheetModel(
       );
     case 'vertical':
       return buildVerticalModel(settings, seed);
+    case 'expression':
+      return buildExpressionModel(settings, seed);
+    case 'poem':
+      return buildPoemModel(settings, content);
+    case 'abacus':
+      return buildAbacusModel(settings, seed);
     case 'clock':
       return buildClockModel(settings, seed);
   }

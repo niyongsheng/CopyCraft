@@ -55,6 +55,16 @@ export const SHEETS: SheetMeta[] = [
     showTextOption: false,
   },
   {
+    id: 'dictation',
+    label: '看拼音写词语',
+    group: '常用',
+    kind: 'grid',
+    defaultTitle: '看拼音写词语',
+    showGridOptions: true,
+    showPinyinOption: true,
+    showTextOption: false,
+  },
+  {
     id: 'hanziParagraph',
     label: '汉字段落字帖',
     group: '常用',
@@ -62,6 +72,16 @@ export const SHEETS: SheetMeta[] = [
     defaultTitle: '段落练习',
     showGridOptions: true,
     showPinyinOption: false,
+    showTextOption: false,
+  },
+  {
+    id: 'poem',
+    label: '古诗词字帖',
+    group: '常用',
+    kind: 'poem',
+    defaultTitle: '古诗词字帖',
+    showGridOptions: true,
+    showPinyinOption: true,
     showTextOption: false,
   },
   {
@@ -111,6 +131,16 @@ export const SHEETS: SheetMeta[] = [
     kind: 'fourline',
     defaultTitle: 'Handwriting Practice',
     showGridOptions: true,
+    showPinyinOption: false,
+    showTextOption: true,
+  },
+  {
+    id: 'englishWords',
+    label: '英语单词帖',
+    group: '英文',
+    kind: 'fourline',
+    defaultTitle: '英语单词练习',
+    showGridOptions: false,
     showPinyinOption: false,
     showTextOption: true,
   },
@@ -185,6 +215,36 @@ export const SHEETS: SheetMeta[] = [
     showTextOption: false,
   },
   {
+    id: 'expression',
+    label: '脱式计算字帖',
+    group: '数学',
+    kind: 'expression',
+    defaultTitle: '脱式计算',
+    showGridOptions: false,
+    showPinyinOption: false,
+    showTextOption: false,
+  },
+  {
+    id: 'abacus',
+    label: '珠心算字帖',
+    group: '数学',
+    kind: 'abacus',
+    defaultTitle: '珠心算练习',
+    showGridOptions: false,
+    showPinyinOption: false,
+    showTextOption: false,
+  },
+  {
+    id: 'blank',
+    label: '空白练习纸',
+    group: '工具',
+    kind: 'grid',
+    defaultTitle: '空白练习纸',
+    showGridOptions: true,
+    showPinyinOption: false,
+    showTextOption: false,
+  },
+  {
     id: 'clock',
     label: '学习时钟字帖',
     group: '工具',
@@ -214,7 +274,10 @@ export const DEFAULT_CONTENT: Record<TextSheetType, string> = {
   hanziWords: '牵 牵挂 牵头\n逊 逊色 谦逊\n疏 稀疏 疏远\n春 春天 春风\n花 花朵 花草\n草 草地 小草',
   hanziParagraph:
     '春天来了，小草悄悄地从土里探出头来。柳树抽出嫩绿的枝条，在微风中轻轻摇摆。孩子们脱下厚厚的棉衣，跑到田野里放风筝。蓝天白云下，到处都是欢声笑语，春天真美啊！',
-  name: '王小明\n小明',
+  name: '倪希米\n希米',
+  dictation: '春天\n花朵\n学校\n朋友\n老师\n同学\n语文\n数学',
+  englishWords: 'apple|苹果\nbanana|香蕉\norange|橙子\nwater|水\nbook|书\npencil|铅笔\nschool|学校\nteacher|老师',
+  poem: '静夜思|李白|唐\n床前明月光，\n疑是地上霜。\n举头望明月，\n低头思故乡。\n注：疑，好像。',
   pinyin: 'āo\ná\nǎ\nà\na o e i u ü\nb p m f\nd t n l\ng k h j q x\nzh ch sh r\nz c s y w',
   stroke:
     '㇐\n㇑\n㇓\n㇔\n㇕\n㇖\n㇗\n㇘\n㇙\n㇚\n㇛\n㇜\n㇝\n㇞\n㇟\n㇠\n㇡\n㇢\n㇣',
@@ -231,7 +294,13 @@ export function textKeyFor(type: SheetType): TextSheetType | undefined {
 
 /** Sheets whose content is generated from settings rather than typed by the user. */
 export function isGeneratedSheet(meta: SheetMeta): boolean {
-  return meta.kind === 'math' || meta.kind === 'vertical' || meta.kind === 'clock';
+  return (
+    meta.kind === 'math' ||
+    meta.kind === 'vertical' ||
+    meta.kind === 'expression' ||
+    meta.kind === 'abacus' ||
+    meta.kind === 'clock'
+  );
 }
 
 const baseSettings: SheetSettings = {
@@ -261,6 +330,20 @@ const baseSettings: SheetSettings = {
   mathRange: 20,
   mathMode: 'calc',
   count: 48,
+  verticalOperation: 'add',
+  verticalDigits: 2,
+  verticalCarry: 'any',
+  verticalAllowRemainder: true,
+  abacusMode: 'read',
+  abacusRods: 2,
+  abacusTerms: 3,
+  expressionOperation: 'addSub',
+  expressionSteps: 2,
+  expressionParentheses: false,
+  englishWordShowMeaning: true,
+  poemVertical: false,
+  poemShowAuthor: true,
+  poemShowNotes: true,
   clockMode: 'read',
   clockFace: 'arabic',
   clockMinute: 'any',
@@ -302,8 +385,46 @@ const overrides: Partial<Record<SheetType, Partial<SheetSettings>>> = {
     showBorder: false,
     traceColor: '#2b2b2e',
   },
-  vertical: { count: 24, fontSize: 65, showBorder: false, traceColor: '#2b2b2e' },
+  vertical: {
+    count: 24,
+    fontSize: 65,
+    showBorder: false,
+    traceColor: '#2b2b2e',
+    verticalOperation: 'add',
+    verticalDigits: 2,
+    verticalCarry: 'any',
+    verticalAllowRemainder: true,
+  },
+  dictation: { gridSize: 40, fontSize: 78, showPinyin: true, titleHeight: 70 },
+  poem: { gridSize: 52, fontSize: 78, showPinyin: true, titleHeight: 70 },
+  englishWords: {
+    gridStyle: 'fourline',
+    gridSize: 40,
+    fontId: 'bradley',
+    fontSize: 68,
+    showText: true,
+    titleHeight: 70,
+  },
+  expression: {
+    count: 24,
+    fontSize: 65,
+    showBorder: false,
+    traceColor: '#2b2b2e',
+    expressionOperation: 'addSub',
+    expressionSteps: 2,
+    expressionParentheses: false,
+  },
+  blank: { gridStyle: 'fang', gridSize: 44, showPinyin: false, showBorder: true, titleHeight: 70 },
   clock: { count: 30, fontSize: 65, gridSize: 40, showBorder: false, traceColor: '#2b2b2e' },
+  abacus: {
+    count: 12,
+    fontSize: 65,
+    showBorder: false,
+    traceColor: '#c9c9c9',
+    abacusMode: 'read',
+    abacusRods: 2,
+    abacusTerms: 3,
+  },
 };
 
 export function defaultSettingsFor(type: SheetType): SheetSettings {

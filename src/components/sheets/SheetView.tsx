@@ -1,7 +1,10 @@
 import { SHEET_BY_ID } from '../../lib/constants';
 import type { SheetModel } from '../../lib/model';
 import type { SheetSettings, SheetType } from '../../types';
+import { AbacusSheet } from './AbacusSheet';
 import { ClockSheet } from './ClockSheet';
+import { ExpressionSheet } from './ExpressionSheet';
+import { PoemSheet } from './PoemSheet';
 import { FourLineSheet } from './FourLineSheet';
 import { GridSheet } from './GridSheet';
 import { MathSheet } from './MathSheet';
@@ -59,6 +62,12 @@ export function SheetView({
       return <MathSheet model={model} settings={settings} title={title} />;
     case 'vertical':
       return <VerticalSheet model={model} settings={settings} title={title} />;
+    case 'abacus':
+      return <AbacusSheet model={model} settings={settings} title={title} />;
+    case 'expression':
+      return <ExpressionSheet model={model} settings={settings} title={title} />;
+    case 'poem':
+      return <PoemSheet model={model} settings={settings} title={title} />;
     case 'clock':
       return <ClockSheet model={model} settings={settings} title={title} />;
   }

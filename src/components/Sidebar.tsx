@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import {
   AlignLeft,
   BookOpen,
+  Calculator,
   CaseUpper,
   Clock3,
   Divide,
+  Equal,
   Hash,
   Languages,
   LibraryBig,
@@ -13,9 +16,12 @@ import {
   Plus,
   Rows3,
   Scale,
+  ScrollText,
   Search,
   Sigma,
   Spline,
+  Square,
+  Type,
   UserRound,
   Waves,
   X,
@@ -24,6 +30,7 @@ import { SHEETS, TOOLS } from '../lib/constants';
 import { APP_VERSION } from '../lib/version';
 import { useApp } from '../store/useApp';
 import type { SheetGroup, SheetType, ToolType } from '../types';
+import { LicenseDialog } from './LicenseDialog';
 
 const GROUP_ORDER: SheetGroup[] = ['常用', '英文', '数学', '工具'];
 
@@ -44,7 +51,13 @@ const SHEET_ICONS: Record<SheetType, LucideIcon> = {
   division: Divide,
   multiplication: X,
   vertical: Rows3,
+  expression: Equal,
+  abacus: Calculator,
   clock: Clock3,
+  dictation: Type,
+  englishWords: CaseUpper,
+  poem: ScrollText,
+  blank: Square,
 };
 
 const TOOL_ICONS: Record<ToolType, LucideIcon> = {
@@ -58,6 +71,7 @@ export function Sidebar({ open }: { open: boolean }) {
   const setActiveType = useApp((s) => s.setActiveType);
   const openTool = useApp((s) => s.openTool);
   const setPresetOpen = useApp((s) => s.setPresetOpen);
+  const [licenseOpen, setLicenseOpen] = useState(false);
 
   return (
     <aside
@@ -137,7 +151,16 @@ export function Sidebar({ open }: { open: boolean }) {
         <span className="sidebar-version" title="Copycraft 版本">
           v{APP_VERSION}
         </span>
+        <button
+          type="button"
+          className="sidebar-license"
+          onClick={() => setLicenseOpen(true)}
+          title="查看 MIT 开源许可"
+        >
+          MIT
+        </button>
       </div>
+      {licenseOpen && <LicenseDialog onClose={() => setLicenseOpen(false)} />}
     </aside>
   );
 }

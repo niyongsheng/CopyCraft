@@ -196,12 +196,21 @@ export const useApp = create<AppState>()(
     }),
     {
       name: 'copycraft',
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => batchedStorage),
       migrate: (persisted, version) => {
-        const state = persisted as { activeType?: string } & Record<string, unknown>;
+        let state = persisted as {
+          activeType?: string;
+          contents?: Record<string, string>;
+        } & Record<string, unknown>;
         if (version < 2 && state?.activeType === 'strokeQuery') {
-          return { ...state, activeType: 'name', activeTool: 'strokeQuery' };
+          state = { ...state, activeType: 'name', activeTool: 'strokeQuery' };
+        }
+        if (version < 3 && state?.contents?.name === '王小明\n小明') {
+          state = {
+            ...state,
+            contents: { ...state.contents, name: '倪希米\n希米' },
+          };
         }
         return state;
       },

@@ -21,6 +21,9 @@ const CONTENT_HINT: Record<TextSheetType, string> = {
   englishLetter: '每行一组字母或单词，自动循环练习',
   englishParagraph: '输入英文段落，自动按行排版',
   number: '每行一个数字',
+  dictation: '每行一个词语，自动生成拼音和空格',
+  englishWords: '每行「单词|中文」，下方自动留空白四线格',
+  poem: '第一行「诗题|作者|朝代」，其后每行一句',
 };
 
 function Panel({
@@ -63,7 +66,7 @@ function Panel({
       <div className="inspector-scroll">
         {children}
         <div className="inspector-footer">
-          <ShieldCheck size={13} /> 内容在本地生成，不上传任何数据
+          <ShieldCheck size={13} /> 字帖内容在本地生成，不会上传
         </div>
       </div>
     </aside>

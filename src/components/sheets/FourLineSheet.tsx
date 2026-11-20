@@ -64,6 +64,9 @@ export function FourLineSheet({
                           {row.text}
                         </span>
                       ))}
+                    {row.meaning && (
+                      <span className="fourline-meaning">{row.meaning}</span>
+                    )}
                   </div>
                 )}
               </div>

@@ -111,29 +111,6 @@ textarea:focus-visible {
   z-index: 50;
 }
 
-.traffic-lights {
-  display: flex;
-  gap: 8px;
-  flex: none;
-}
-
-.tl {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.2);
-}
-
-.tl-red {
-  background: var(--red);
-}
-.tl-yellow {
-  background: var(--yellow);
-}
-.tl-green {
-  background: var(--green);
-}
-
 .brand {
   display: flex;
   align-items: center;
@@ -187,10 +164,6 @@ textarea:focus-visible {
 }
 
 /* Electron: use native window chrome and make the bar draggable. */
-html[data-electron='true'] .traffic-lights {
-  display: none;
-}
-
 html[data-electron='true'] .titlebar {
   -webkit-app-region: drag;
   user-select: none;
@@ -1057,6 +1030,19 @@ input[type="range"]::-moz-range-thumb {
   flex: none;
 }
 
+.fourline-meaning {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 0.62em;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
+
 /* ───────────────────────── Pen control ───────────────────────── */
 
 .pen-cell {
@@ -1169,6 +1155,234 @@ input[type="range"]::-moz-range-thumb {
 .v-answer-space {
   width: 100%;
   height: 2.1em;
+}
+
+.vertical-division {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: 1.35em auto;
+  align-items: end;
+  min-width: 4.8em;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+
+.vd-quotient {
+  grid-column: 2;
+  grid-row: 1;
+  border-bottom: 1.5px solid currentColor;
+  min-height: 1.35em;
+}
+
+.vd-divisor {
+  grid-column: 1;
+  grid-row: 2;
+  padding-right: 0.25em;
+  text-align: right;
+}
+
+.vd-dividend {
+  grid-column: 2;
+  grid-row: 2;
+  border-left: 1.5px solid currentColor;
+  padding-left: 0.3em;
+}
+
+/* ───────────────────────── Poem ───────────────────────── */
+
+.poem-author {
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.poem-horizontal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.poem-line {
+  display: flex;
+  align-items: stretch;
+}
+
+.poem-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.poem-pinyin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  color: var(--text-3);
+  line-height: 1;
+}
+
+.poem-char {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex: 1;
+  line-height: 1;
+}
+
+.poem-vertical {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.poem-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.poem-vchar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  line-height: 1;
+}
+
+.poem-notes {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.7;
+  opacity: 0.82;
+}
+
+/* ───────────────────────── Expression ───────────────────────── */
+
+.expression-grid {
+  display: grid;
+  column-gap: 16px;
+  row-gap: 8px;
+  align-content: start;
+}
+
+.expression-block {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px 8px;
+}
+
+.expression-head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.expression-index {
+  color: var(--muted);
+  font-size: 0.72em;
+}
+
+.expression-step {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding-left: 1.1em;
+}
+
+.expression-blank {
+  flex: 1;
+  height: 1.2em;
+  border-bottom: 1.5px solid currentColor;
+  opacity: 0.65;
+}
+
+/* ───────────────────────── Abacus ───────────────────────── */
+
+.abacus-grid {
+  display: grid;
+  column-gap: 8px;
+  row-gap: 10px;
+  align-content: start;
+  justify-items: center;
+}
+
+.abacus-grid.is-calc {
+  row-gap: 2px;
+}
+
+.abacus-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  padding: 2px 0;
+}
+
+.abacus-grid.is-calc .abacus-block {
+  justify-content: center;
+}
+
+.abacus-prompt {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-height: 1.5em;
+  font-variant-numeric: tabular-nums;
+}
+
+.abacus-index {
+  color: var(--muted);
+  font-size: 0.72em;
+}
+
+.abacus-number {
+  letter-spacing: 0.08em;
+}
+
+.abacus-svg {
+  display: block;
+  margin-top: 2px;
+}
+
+.abacus-answer {
+  width: 62%;
+  height: 1.4em;
+  margin-top: 6px;
+  border-bottom: 1.5px solid currentColor;
+  opacity: 0.65;
+}
+
+.abacus-caption {
+  margin-top: 4px;
+  font-size: 9px;
+}
+
+.abacus-calc {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 8px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.abacus-calc-answer {
+  flex: 0 0 3em;
+  height: 1.2em;
+  border-bottom: 1.5px solid currentColor;
+  opacity: 0.65;
 }
 
 /* ───────────────────────── Clock ───────────────────────── */

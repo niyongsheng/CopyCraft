@@ -29,6 +29,14 @@ type ColorKey = 'borderColor' | 'lineColor' | 'traceColor';
 type SelectKey =
   | 'mathOperation'
   | 'mathMode'
+  | 'verticalOperation'
+  | 'verticalDigits'
+  | 'verticalCarry'
+  | 'abacusMode'
+  | 'abacusRods'
+  | 'abacusTerms'
+  | 'expressionOperation'
+  | 'expressionSteps'
   | 'clockMode'
   | 'clockFace'
   | 'clockMinute'
@@ -90,6 +98,56 @@ const MATH_OPERATION_OPTIONS = [
 const MATH_MODE_OPTIONS = [
   { value: 'calc', label: '运算' },
   { value: 'fill', label: '填空' },
+];
+
+const VERTICAL_OPERATION_OPTIONS = [
+  { value: 'add', label: '加法' },
+  { value: 'sub', label: '减法' },
+  { value: 'both', label: '加减混合' },
+  { value: 'mul', label: '乘法' },
+  { value: 'div', label: '除法' },
+  { value: 'mixed', label: '四则混合' },
+];
+
+const VERTICAL_DIGIT_OPTIONS = [
+  { value: 2, label: '两位数' },
+  { value: 3, label: '三位数' },
+];
+
+const VERTICAL_CARRY_OPTIONS = [
+  { value: 'any', label: '不限' },
+  { value: 'require', label: '必须有进退位' },
+  { value: 'avoid', label: '不进位/不退位' },
+];
+
+const ABACUS_MODE_OPTIONS = [
+  { value: 'read', label: '看珠写数' },
+  { value: 'draw', label: '看数画珠' },
+  { value: 'calc', label: '心算连算' },
+];
+
+const ABACUS_ROD_OPTIONS = [
+  { value: 1, label: '一位数' },
+  { value: 2, label: '两位数' },
+  { value: 3, label: '三位数' },
+  { value: 4, label: '四位数' },
+];
+
+const ABACUS_TERM_OPTIONS = [
+  { value: 2, label: '2 个数' },
+  { value: 3, label: '3 个数' },
+  { value: 4, label: '4 个数' },
+];
+
+const EXPRESSION_OPERATION_OPTIONS = [
+  { value: 'addSub', label: '加减' },
+  { value: 'mulDiv', label: '乘除' },
+  { value: 'mixed', label: '四则混合' },
+];
+
+const EXPRESSION_STEP_OPTIONS = [
+  { value: 2, label: '两步' },
+  { value: 3, label: '三步' },
 ];
 
 const CLOCK_MODE_OPTIONS = [
@@ -265,6 +323,139 @@ const TITLE_CARD: CardDef = {
   ],
 };
 
+const VERTICAL_CARD: CardDef = {
+  label: '竖式',
+  icon: Calculator,
+  controls: [
+    {
+      kind: 'select',
+      key: 'verticalOperation',
+      label: '运算',
+      options: VERTICAL_OPERATION_OPTIONS,
+    },
+    {
+      kind: 'select',
+      key: 'verticalDigits',
+      label: '位数',
+      options: VERTICAL_DIGIT_OPTIONS,
+    },
+    {
+      kind: 'select',
+      key: 'verticalCarry',
+      label: '进位/退位',
+      options: VERTICAL_CARRY_OPTIONS,
+      hidden: ({ settings }) =>
+        settings.verticalOperation === 'mul' || settings.verticalOperation === 'div',
+    },
+    {
+      kind: 'toggle',
+      key: 'verticalAllowRemainder',
+      label: '允许余数',
+      hint: '除法结果可以有余数',
+      hidden: ({ settings }) =>
+        settings.verticalOperation !== 'div' && settings.verticalOperation !== 'mixed',
+    },
+    { kind: 'slider', key: 'count', label: '题目数量', min: 4, max: 60 },
+    {
+      kind: 'note',
+      text: '乘法为多位数 × 一位数；除法为多位数 ÷ 一位数。',
+      hidden: ({ settings }) =>
+        settings.verticalOperation !== 'mul' &&
+        settings.verticalOperation !== 'div' &&
+        settings.verticalOperation !== 'mixed',
+    },
+  ],
+};
+
+const ABACUS_CARD: CardDef = {
+  label: '珠心算',
+  icon: Calculator,
+  controls: [
+    {
+      kind: 'select',
+      key: 'abacusMode',
+      label: '模式',
+      options: ABACUS_MODE_OPTIONS,
+    },
+    {
+      kind: 'select',
+      key: 'abacusRods',
+      label: '位数',
+      options: ABACUS_ROD_OPTIONS,
+    },
+    {
+      kind: 'select',
+      key: 'abacusTerms',
+      label: '连算个数',
+      options: ABACUS_TERM_OPTIONS,
+      hidden: ({ settings }) => settings.abacusMode !== 'calc',
+    },
+    {
+      kind: 'select',
+      key: 'mathOperation',
+      label: '运算',
+      options: MATH_OPERATION_OPTIONS,
+      hidden: ({ settings }) => settings.abacusMode !== 'calc',
+    },
+    { kind: 'slider', key: 'count', label: '题目数量', min: 4, max: 24 },
+    {
+      kind: 'note',
+      text: '看珠写数：根据算盘珠写数字；看数画珠：在空算盘上拨珠；心算连算：连续加减心算。',
+    },
+  ],
+};
+
+const EXPRESSION_CARD: CardDef = {
+  label: '脱式',
+  icon: Calculator,
+  controls: [
+    {
+      kind: 'select',
+      key: 'expressionOperation',
+      label: '运算',
+      options: EXPRESSION_OPERATION_OPTIONS,
+    },
+    {
+      kind: 'select',
+      key: 'expressionSteps',
+      label: '步数',
+      options: EXPRESSION_STEP_OPTIONS,
+    },
+    {
+      kind: 'toggle',
+      key: 'expressionParentheses',
+      label: '带括号',
+      hint: '混合运算会自动补括号',
+      hidden: ({ settings }) => settings.expressionOperation === 'mixed',
+    },
+    { kind: 'slider', key: 'mathRange', label: '数字范围', min: 5, max: 99 },
+    { kind: 'slider', key: 'count', label: '题目数量', min: 4, max: 40 },
+  ],
+};
+
+const POEM_CARD: CardDef = {
+  label: '古诗词',
+  icon: Type,
+  controls: [
+    { kind: 'toggle', key: 'poemVertical', label: '竖排' },
+    { kind: 'toggle', key: 'poemShowAuthor', label: '显示作者' },
+    { kind: 'toggle', key: 'poemShowNotes', label: '显示注释' },
+    {
+      kind: 'note',
+      text: '第一行格式：诗题|作者|朝代；其后每行一句，注释行以「注：」开头。竖排模式不显示拼音。',
+    },
+  ],
+};
+
+const ENGLISH_WORD_CARD: CardDef = {
+  label: '单词',
+  icon: Type,
+  controls: [
+    { kind: 'toggle', key: 'englishWordShowMeaning', label: '显示中文' },
+    { kind: 'note', text: '每行格式：word|中文。下方自动留一行空白四线格。' },
+  ],
+};
+
 function mathCard(meta: SheetMeta): CardDef {
   const isTimesTable = meta.id === 'multiplication' || meta.id === 'division';
   return {
@@ -294,6 +485,11 @@ export function inspectorCards(meta: SheetMeta): CardDef[] {
   return [
     ...(meta.id === 'name' ? [NAME_CARD] : []),
     ...(meta.kind === 'math' ? [mathCard(meta)] : []),
+    ...(meta.kind === 'vertical' ? [VERTICAL_CARD] : []),
+    ...(meta.kind === 'expression' ? [EXPRESSION_CARD] : []),
+    ...(meta.kind === 'abacus' ? [ABACUS_CARD] : []),
+    ...(meta.kind === 'poem' ? [POEM_CARD] : []),
+    ...(meta.id === 'englishWords' ? [ENGLISH_WORD_CARD] : []),
     ...(meta.kind === 'clock' ? [CLOCK_CARD] : []),
     ...(meta.kind === 'pen' ? [PEN_CARD] : []),
     LAYOUT_CARD,
