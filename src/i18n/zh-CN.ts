@@ -24,7 +24,6 @@ const zhCN = {
   'titlebar.toggleInspector': '切换设置面板',
   'titlebar.presetLibrary': '模板库 / 课本同步',
   'titlebar.openPresetLibrary': '打开模板库',
-  'titlebar.downloadDesktop': '下载桌面端',
   'titlebar.openSettings': '打开设置',
 
   'sidebar.workbench': '工作台',

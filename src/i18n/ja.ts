@@ -23,7 +23,6 @@ const ja: Record<I18nKey, string> = {
   'titlebar.toggleInspector': '設定パネルを切り替え',
   'titlebar.presetLibrary': 'テンプレートライブラリ / 教科書準拠',
   'titlebar.openPresetLibrary': 'テンプレートライブラリを開く',
-  'titlebar.downloadDesktop': 'デスクトップ版をダウンロード',
   'titlebar.openSettings': '設定を開く',
 
   'sidebar.workbench': 'ワークスペース',

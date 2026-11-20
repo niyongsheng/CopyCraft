@@ -23,7 +23,6 @@ const en: Record<I18nKey, string> = {
   'titlebar.toggleInspector': 'Toggle settings panel',
   'titlebar.presetLibrary': 'Template library / Textbooks',
   'titlebar.openPresetLibrary': 'Open template library',
-  'titlebar.downloadDesktop': 'Download desktop app',
   'titlebar.openSettings': 'Open settings',
 
   'sidebar.workbench': 'Workspace',

@@ -23,7 +23,6 @@ const zhTW: Record<I18nKey, string> = {
   'titlebar.toggleInspector': '切換設定面板',
   'titlebar.presetLibrary': '模板庫 / 課本同步',
   'titlebar.openPresetLibrary': '開啟模板庫',
-  'titlebar.downloadDesktop': '下載桌面版',
   'titlebar.openSettings': '開啟設定',
 
   'sidebar.workbench': '工作台',

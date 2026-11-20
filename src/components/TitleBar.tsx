@@ -1,14 +1,7 @@
-import {
-  Download,
-  LibraryBig,
-  PanelLeft,
-  Settings,
-  SlidersHorizontal,
-} from 'lucide-react';
+import { LibraryBig, PanelLeft, Settings, SlidersHorizontal } from 'lucide-react';
 import appIcon from '../assets/app-icon.png';
 import { useT } from '../i18n/useT';
 import { isDesktop } from '../lib/platform';
-import { RELEASES_URL } from '../lib/updates';
 import { useApp } from '../store/useApp';
 
 export function TitleBar() {
@@ -52,7 +45,7 @@ export function TitleBar() {
         >
           <SlidersHorizontal size={15} />
         </button>
-        {desktop ? (
+        {!desktop && (
           <button
             type="button"
             className="icon-btn titlebar-preset"
@@ -62,17 +55,6 @@ export function TitleBar() {
           >
             <LibraryBig size={15} />
           </button>
-        ) : (
-          <a
-            className="icon-btn titlebar-preset"
-            href={RELEASES_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            title={t('titlebar.downloadDesktop')}
-            aria-label={t('titlebar.downloadDesktop')}
-          >
-            <Download size={15} />
-          </a>
         )}
         <span className="titlebar-divider" aria-hidden="true" />
         <button

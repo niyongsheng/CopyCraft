@@ -23,7 +23,6 @@ const ko: Record<I18nKey, string> = {
   'titlebar.toggleInspector': '설정 패널 전환',
   'titlebar.presetLibrary': '템플릿 라이브러리 / 교과서 연동',
   'titlebar.openPresetLibrary': '템플릿 라이브러리 열기',
-  'titlebar.downloadDesktop': '데스크톱 앱 다운로드',
   'titlebar.openSettings': '설정 열기',
 
   'sidebar.workbench': '작업 공간',
