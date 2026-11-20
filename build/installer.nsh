@@ -2,6 +2,8 @@
 ; electron-builder passes SHORTCUT_NAME as a compile-time define; replace it
 ; with a runtime variable so the name follows the Windows UI language.
 
+!ifndef BUILD_UNINSTALLER
+
 !ifdef SHORTCUT_NAME
   !undef SHORTCUT_NAME
 !endif
@@ -25,3 +27,5 @@ Var LocalizedShortcutName
 !macroend
 
 !define SHORTCUT_NAME "$LocalizedShortcutName"
+
+!endif
