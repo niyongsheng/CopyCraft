@@ -1,7 +1,7 @@
 {
   "name": "copycraft",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "main": "electron/main.cjs",
   "description": "CopyCraft 字帖工坊 — 支持 Web、macOS 与 Windows 的字帖生成器",
