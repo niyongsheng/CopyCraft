@@ -138,6 +138,16 @@ export default function App() {
     <div className="app">
       <TitleBar />
       <div className="app-body">
+        {(showSidebar || showInspector) && (
+          <div
+            className="drawer-scrim"
+            aria-hidden="true"
+            onClick={() => {
+              setSidebar(false);
+              setInspector(false);
+            }}
+          />
+        )}
         <Sidebar open={showSidebar} />
         <Inspector open={showInspector} />
         <Stage />

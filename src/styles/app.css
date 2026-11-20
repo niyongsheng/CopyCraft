@@ -1672,7 +1672,22 @@ input[type="range"]::-moz-range-thumb {
   }
 }
 
+/* Narrow-screen click-away layer behind the floating sidebar / inspector. */
+.drawer-scrim {
+  display: none;
+}
+
 @media (max-width: 900px) {
+  .drawer-scrim {
+    display: block;
+    position: fixed;
+    top: 50px;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 44;
+    background: rgba(0, 0, 0, 0.32);
+  }
   .sidebar {
     position: fixed;
     left: 0;
