@@ -3,11 +3,11 @@ import {
   ArrowLeft,
   ChevronDown,
   FileDown,
-  FileText,
   FileType2,
   Loader2,
   Minus,
   Plus,
+  Printer,
   RefreshCw,
   Scan,
   SlidersHorizontal,
@@ -70,7 +70,7 @@ export function SheetStage() {
   const [userZoom, setUserZoom] = useState(1);
   const [autoFit, setAutoFit] = useState(true);
   const [toast, setToast] = useState('');
-  const [exportKind, setExportKind] = useState<'pdf' | 'docx' | null>(null);
+  const [exportKind, setExportKind] = useState<'pdf' | 'docx' | 'print' | null>(null);
   const [exportMenu, setExportMenu] = useState(false);
 
   useEffect(() => {
@@ -96,11 +96,15 @@ export function SheetStage() {
   const pageCount = useMemo(() => {
     if (workbookSheets) {
       return workbookSheets.reduce(
-        (sum, item) => sum + (item.model.kind === 'pen' ? 1 : item.model.pages.length),
+        (sum, item) =>
+          sum +
+          (item.model.kind === 'pen' || item.model.kind === 'poem'
+            ? 1
+            : item.model.pages.length),
         0,
       );
     }
-    return model.kind === 'pen' ? 1 : model.pages.length;
+    return model.kind === 'pen' || model.kind === 'poem' ? 1 : model.pages.length;
   }, [model, workbookSheets]);
 
   const changeZoom = (delta: number) => {
@@ -109,7 +113,7 @@ export function SheetStage() {
   };
 
   /** 导出前向主进程确认试用 / 激活状态；受限时直接打开设置引导激活。 */
-  const ensureCanExport = async (format: 'pdf' | 'docx'): Promise<boolean> => {
+  const ensureCanExport = async (format: 'pdf' | 'docx' | 'print'): Promise<boolean> => {
     const desktop = window.desktop;
     if (!desktop?.isElectron) return true;
     try {
@@ -155,11 +159,50 @@ export function SheetStage() {
           setToast(`导出失败：${result.error ?? '未知错误'}`);
         }
       } else {
-        setToast('在打印窗口中选择「另存为 PDF」即可导出多页字帖');
-        window.print();
+        setToast('正在生成 PDF…');
+        const { createPdfFromPages } = await import('../../lib/exportPdf');
+        const { blob, pages } = await createPdfFromPages();
+        downloadBlob(blob, exportFileName('pdf'));
+        track('export', { format: 'pdf', result: 'saved' });
+        setToast(`PDF 已下载（${pages} 页）`);
       }
     } catch (error) {
       setToast(`导出失败：${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setExportKind(null);
+    }
+  };
+
+  /** 打印当前字帖：桌面版走主进程打印并计入试用次数，网页版走浏览器打印窗口。 */
+  const printSheet = async () => {
+    if (exportKind) return;
+    setExportMenu(false);
+
+    const desktop = window.desktop;
+    if (!desktop?.isElectron) {
+      setToast('请在打印窗口中选择打印机，或「另存为 PDF」');
+      track('print');
+      window.print();
+      return;
+    }
+
+    setExportKind('print');
+    try {
+      const result = await desktop.printSheet();
+      if (result.needActivation) {
+        setToast(result.error ?? '免费试用已结束，请激活后继续打印');
+        useApp.getState().setSettingsOpen(true);
+        void refreshLicense();
+      } else if (result.canceled) {
+        setToast('');
+      } else if (result.printed) {
+        setToast('已发送到打印机');
+        void refreshLicense();
+      } else {
+        setToast(`打印失败：${result.error ?? '未知错误'}`);
+      }
+    } catch (error) {
+      setToast(`打印失败：${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setExportKind(null);
     }
@@ -196,6 +239,7 @@ export function SheetStage() {
         } else setToast(`导出失败：${result.error ?? '未知错误'}`);
       } else {
         downloadBlob(blob, fileName);
+        track('export', { format: 'docx', result: 'saved' });
         setToast(`Word 文档已下载（${pages} 页）`);
       }
     } catch (error) {
@@ -319,16 +363,16 @@ export function SheetStage() {
             <button
               type="button"
               className="btn btn-primary export-main"
-              onClick={() => void exportPdf()}
+              onClick={() => void printSheet()}
               disabled={exportKind !== null}
-              title={trialBlocked ? '免费试用已结束，点击激活' : '导出 PDF'}
+              title={trialBlocked ? '免费试用已结束，点击激活' : '打印字帖'}
             >
               {exportKind !== null ? (
                 <Loader2 size={14} className="spin" />
               ) : (
-                <FileDown size={14} />
+                <Printer size={14} />
               )}
-              {exportKind !== null ? '生成中…' : '导出 PDF'}
+              {exportKind !== null ? '处理中…' : '打印'}
             </button>
             <button
               type="button"
@@ -346,16 +390,18 @@ export function SheetStage() {
                 <div className="menu-backdrop" onClick={() => setExportMenu(false)} />
                 <div className="export-menu" role="menu">
                   <button type="button" role="menuitem" onClick={() => void exportPdf()}>
-                    <FileText size={17} />
+                    <FileDown size={17} />
                     <span>
-                      <strong>PDF 文档</strong>
-                      <small>矢量输出，适合直接打印</small>
+                      <strong>下载 PDF</strong>
+                      <small>
+                        {desktopLicense ? '保存为 PDF 文件' : '通过打印窗口另存为 PDF'}
+                      </small>
                     </span>
                   </button>
                   <button type="button" role="menuitem" onClick={() => void exportDocx()}>
                     <FileType2 size={17} />
                     <span>
-                      <strong>Word 文档 (.docx)</strong>
+                      <strong>下载 Word (.docx)</strong>
                       <small>按高清页面图片导出，版式一致</small>
                     </span>
                   </button>

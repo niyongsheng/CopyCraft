@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('desktop', {
     chrome: process.versions.chrome,
   },
   exportPdf: () => ipcRenderer.invoke('export-pdf'),
+  printSheet: () => ipcRenderer.invoke('print-sheet'),
   saveFile: (payload) => ipcRenderer.invoke('save-file', payload),
   checkUpdates: () => ipcRenderer.invoke('check-updates'),
   setTheme: (theme) => ipcRenderer.invoke('set-theme', theme),

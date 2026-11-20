@@ -9,6 +9,14 @@ export interface PdfExportResult {
   needActivation?: boolean;
 }
 
+export interface PrintResult {
+  printed: boolean;
+  canceled?: boolean;
+  error?: string;
+  /** 试用已结束：需要激活后才能继续打印。 */
+  needActivation?: boolean;
+}
+
 export interface SavedFileResult {
   saved: boolean;
   canceled?: boolean;
@@ -78,6 +86,7 @@ export interface DesktopBridge {
     chrome: string;
   };
   exportPdf: () => Promise<PdfExportResult>;
+  printSheet: () => Promise<PrintResult>;
   saveFile: (payload: SaveFilePayload) => Promise<SavedFileResult>;
   checkUpdates: () => Promise<{
     latest: string | null;

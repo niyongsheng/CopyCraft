@@ -217,8 +217,13 @@ function createWindow(state = {}) {
 
   win.on('close', () => saveWindowState(win));
 
+  const isExternalUrl = (url) =>
+    url.startsWith('http://') ||
+    url.startsWith('https://') ||
+    url.startsWith('mailto:');
+
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('http://') || url.startsWith('https://')) {
+    if (isExternalUrl(url)) {
       void shell.openExternal(url);
     }
     return { action: 'deny' };
@@ -228,7 +233,7 @@ function createWindow(state = {}) {
     if (url.startsWith('file://')) return;
     if (DEV_URL && url.startsWith(DEV_URL)) return;
     event.preventDefault();
-    if (url.startsWith('http://') || url.startsWith('https://')) {
+    if (isExternalUrl(url)) {
       void shell.openExternal(url);
     }
   });
@@ -306,6 +311,76 @@ async function exportPdf(win) {
     analytics?.track('export', { format: 'pdf', result: 'failed', stage: 'export' });
     return {
       saved: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  } finally {
+    exportInProgress = false;
+  }
+}
+
+/**
+ * 打开系统打印窗口。与导出 PDF 共用试用门禁，成功打印后计一次导出。
+ * 打印内容由 @media print 样式限定为 .sheet-page。
+ */
+async function printSheet(win) {
+  if (!win || win.isDestroyed()) {
+    return { printed: false, error: '窗口不可用' };
+  }
+  if (exportInProgress) {
+    return { printed: false, error: '正在处理，请稍候' };
+  }
+
+  exportInProgress = true;
+  try {
+    const hasSheet = await win.webContents.executeJavaScript(
+      "Boolean(document.querySelector('.sheet-page'))",
+    );
+    if (!hasSheet) {
+      return { printed: false, error: '当前视图没有可打印的字帖，请先选择一个字帖类型' };
+    }
+
+    const blocked = exportGate('print');
+    if (blocked) {
+      return {
+        printed: false,
+        needActivation: blocked.needActivation,
+        error: blocked.error,
+      };
+    }
+
+    return await new Promise((resolve) => {
+      win.webContents.print(
+        {
+          printBackground: true,
+          pageSize: 'A4',
+          margins: { marginType: 'none' },
+          landscape: false,
+        },
+        (success, failureReason) => {
+          if (success) {
+            recordExport(win);
+            analytics?.track('export', { format: 'print', result: 'saved' });
+            resolve({ printed: true });
+            return;
+          }
+          const canceled = failureReason === 'cancelled' || failureReason === 'canceled';
+          analytics?.track('export', {
+            format: 'print',
+            result: canceled ? 'canceled' : 'failed',
+            ...(canceled ? {} : { reason: failureReason ?? 'unknown' }),
+          });
+          resolve({
+            printed: false,
+            canceled,
+            error: canceled ? undefined : failureReason,
+          });
+        },
+      );
+    });
+  } catch (error) {
+    analytics?.track('export', { format: 'print', result: 'failed', stage: 'print' });
+    return {
+      printed: false,
       error: error instanceof Error ? error.message : String(error),
     };
   } finally {
@@ -396,6 +471,11 @@ function buildMenu() {
 ipcMain.handle('export-pdf', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   return exportPdf(win);
+});
+
+ipcMain.handle('print-sheet', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  return printSheet(win);
 });
 
 ipcMain.handle('license-status', () => {
