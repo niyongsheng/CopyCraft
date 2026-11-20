@@ -6,20 +6,29 @@ import {
   Check,
   CheckCircle2,
   Copy,
+  Github,
+  Heart,
   Info,
   KeyRound,
   Loader2,
   Moon,
   Palette,
   RefreshCw,
+  Scale,
   ShieldCheck,
   Sun,
   X,
 } from 'lucide-react';
-import appIcon from '../assets/app-icon.png';
+import { LicenseDialog } from './LicenseDialog';
+import { PrivacyDialog } from './PrivacyDialog';
 import { useUpdateCheck } from '../hooks/useUpdateCheck';
-import { applyAnalyticsState } from '../lib/analytics';
+import {
+  applyAnalyticsState,
+  getWebAnalyticsState,
+  setWebAnalyticsEnabled,
+} from '../lib/analytics';
 import { formatFingerprint, formatLicenseDate } from '../lib/license';
+import { REPO_URL } from '../lib/updates';
 import { APP_VERSION } from '../lib/version';
 import { useApp } from '../store/useApp';
 import {
@@ -64,6 +73,8 @@ export function SettingsDialog() {
   } | null>(null);
   const [analyticsEnabled, setAnalyticsEnabled] = useState<boolean | null>(null);
   const [analyticsSaving, setAnalyticsSaving] = useState(false);
+  const [licenseOpen, setLicenseOpen] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
 
   // 弹窗挂载即打开：每次打开都向主进程刷新一次权威状态。
   useEffect(() => {
@@ -71,7 +82,12 @@ export function SettingsDialog() {
   }, [desktop, refreshLicense]);
 
   useEffect(() => {
-    if (!desktop) return;
+    if (!desktop) {
+      const state = getWebAnalyticsState();
+      setAnalyticsEnabled(state.enabled);
+      applyAnalyticsState(state);
+      return;
+    }
     let cancelled = false;
     void window.desktop
       ?.analyticsState()
@@ -89,12 +105,19 @@ export function SettingsDialog() {
   }, [desktop]);
 
   const toggleAnalytics = async (value: boolean) => {
-    const bridge = window.desktop;
-    if (!bridge?.isElectron || analyticsSaving) return;
+    if (analyticsSaving) return;
     const previous = analyticsEnabled;
     setAnalyticsEnabled(value);
     setAnalyticsSaving(true);
     try {
+      if (!desktop) {
+        const state = await setWebAnalyticsEnabled(value);
+        setAnalyticsEnabled(state.enabled);
+        applyAnalyticsState(state);
+        return;
+      }
+      const bridge = window.desktop;
+      if (!bridge?.isElectron) return;
       const state = await bridge.setAnalyticsEnabled(value);
       setAnalyticsEnabled(state.enabled);
       applyAnalyticsState(state);
@@ -278,11 +301,12 @@ export function SettingsDialog() {
             <p className="settings-hint">主题会立即应用，并随其它设置一起保存在本地。</p>
           </section>
 
-          <section className="settings-section">
-            <div className="settings-section-head">
-              <KeyRound size={14} />
-              激活
-            </div>
+          {desktop && (
+            <section className="settings-section">
+              <div className="settings-section-head">
+                <KeyRound size={14} />
+                激活
+              </div>
 
             <div className={`license-status is-${licenseView.tone}`}>
               <LicenseIcon
@@ -314,7 +338,15 @@ export function SettingsDialog() {
                     </button>
                   </div>
                   <p className="license-hint">
-                    将指纹发给开发者获取激活码；激活码仅对本机有效。
+                    <a
+                      className="license-link"
+                      href="https://ifdian.net/a/nico2026"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      激活码
+                    </a>
+                    仅对本机有效。
                   </p>
                 </div>
 
@@ -357,46 +389,76 @@ export function SettingsDialog() {
               </>
             )}
 
-            {!desktop && (
-              <p className="license-hint">
-                网页版不受试用限制；机器指纹与离线激活仅在桌面版提供。
-              </p>
-            )}
-          </section>
+            </section>
+          )}
 
           <section className="settings-section">
             <div className="settings-section-head">
               <BarChart3 size={14} />
               隐私
             </div>
-            {desktop ? (
-              <>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={analyticsEnabled ?? true}
-                  className={`settings-switch ${analyticsEnabled ? 'is-on' : ''}`}
-                  onClick={() => void toggleAnalytics(!(analyticsEnabled ?? true))}
-                  disabled={analyticsEnabled === null || analyticsSaving}
-                >
-                  <span className="settings-switch-text">
-                    <strong>匿名使用统计</strong>
-                    <small>
-                      仅上报功能使用与导出结果，不包含字帖内容、姓名、机器指纹或激活码。
-                    </small>
-                  </span>
-                  <span className="settings-switch-track" aria-hidden="true">
-                    <span className="settings-switch-thumb" />
-                  </span>
-                </button>
-                <p className="settings-hint">
-                  统计通过 Aptabase 匿名发送，可在任何时候关闭。
-                </p>
-              </>
-            ) : (
-              <p className="settings-hint">网页版未启用使用统计。</p>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={analyticsEnabled ?? true}
+              className={`settings-switch ${analyticsEnabled ? 'is-on' : ''}`}
+              onClick={() => void toggleAnalytics(!(analyticsEnabled ?? true))}
+              disabled={analyticsEnabled === null || analyticsSaving}
+            >
+              <span className="settings-switch-text">
+                <strong>匿名使用统计</strong>
+                <small>
+                  {desktop
+                    ? '仅上报功能使用与导出结果，不包含字帖内容、姓名、机器指纹或激活码。'
+                    : '仅统计打印或下载事件，不包含字帖内容或个人信息。'}
+                </small>
+              </span>
+              <span className="settings-switch-track" aria-hidden="true">
+                <span className="settings-switch-thumb" />
+              </span>
+            </button>
+            {desktop && (
+              <p className="settings-hint">
+                统计通过 Aptabase 匿名发送，可在任何时候关闭。
+              </p>
             )}
+            <button
+              type="button"
+              className="text-button"
+              onClick={() => setPrivacyOpen(true)}
+            >
+              查看隐私政策
+            </button>
           </section>
+
+          {!desktop && (
+            <section className="settings-section">
+              <div className="settings-section-head">
+                <Heart size={14} />
+                支持
+              </div>
+              <div className="support-card">
+                <div className="support-meta">
+                  <div className="support-title">赞助</div>
+                  <div className="support-desc">
+                    如果 Copycraft 帮到了你，欢迎在爱发电支持后续开发。
+                  </div>
+                </div>
+                <a
+                  className="support-afdian"
+                  href="https://ifdian.net/a/nico2026"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="在爱发电支持 Copycraft"
+                >
+                  <span className="support-afdian-main">
+                    <Heart size={12} /> 爱发电
+                  </span>
+                  <span className="support-afdian-brand">AFDIAN</span>
+                </a>
+              </div>
+            </section>
+          )}
 
           <section className="settings-section">
             <div className="settings-section-head">
@@ -404,7 +466,6 @@ export function SettingsDialog() {
               关于
             </div>
             <div className="about-card">
-              <img className="about-icon" src={appIcon} alt="" aria-hidden="true" />
               <div className="about-meta">
                 <div className="about-name">Copycraft 字帖工坊</div>
                 <div className="about-version">
@@ -412,47 +473,76 @@ export function SettingsDialog() {
                   {window.desktop?.isElectron ? '桌面版' : '网页版'}
                 </div>
               </div>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => void check()}
-                disabled={checking}
-              >
-                {checking ? (
-                  <Loader2 size={13} className="spin" />
-                ) : (
-                  <RefreshCw size={13} />
+              <div className="about-actions">
+                <button
+                  type="button"
+                  className="btn btn-ghost about-license"
+                  onClick={() => setLicenseOpen(true)}
+                  title="查看 MIT 开源许可"
+                >
+                  <Scale size={13} />
+                  MIT 许可
+                </button>
+                <a
+                  className="btn btn-ghost about-github"
+                  href={REPO_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="打开 GitHub 仓库"
+                >
+                  <Github size={13} />
+                  GitHub
+                </a>
+                {desktop && (
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => void check()}
+                    disabled={checking}
+                  >
+                    {checking ? (
+                      <Loader2 size={13} className="spin" />
+                    ) : (
+                      <RefreshCw size={13} />
+                    )}
+                    {checking ? '检查中…' : '检查更新'}
+                  </button>
                 )}
-                {checking ? '检查中…' : '检查更新'}
-              </button>
+              </div>
             </div>
 
-            {update.phase === 'available' && (
-              <button type="button" className="update-banner" onClick={openRelease}>
-                <span>
-                  <strong>发现新版本 v{update.latest}</strong>
-                  <small>前往 GitHub Releases 下载安装包</small>
-                </span>
-                <ArrowUpRight size={15} />
-              </button>
-            )}
-            {update.phase === 'latest' && (
-              <div className="update-note is-ok">
-                <Check size={13} /> 已是最新版本 v{APP_VERSION}
-              </div>
-            )}
-            {update.phase === 'error' && (
-              <div className="update-note is-error">
-                <Info size={13} /> 检查更新失败：{update.message ?? '未知错误'}
-              </div>
+            {desktop && (
+              <>
+                {update.phase === 'available' && (
+                  <button type="button" className="update-banner" onClick={openRelease}>
+                    <span>
+                      <strong>发现新版本 v{update.latest}</strong>
+                      <small>前往 GitHub Releases 下载安装包</small>
+                    </span>
+                    <ArrowUpRight size={15} />
+                  </button>
+                )}
+                {update.phase === 'latest' && (
+                  <div className="update-note is-ok">
+                    <Check size={13} /> 已是最新版本 v{APP_VERSION}
+                  </div>
+                )}
+                {update.phase === 'error' && (
+                  <div className="update-note is-error">
+                    <Info size={13} /> 检查更新失败：{update.message ?? '未知错误'}
+                  </div>
+                )}
+              </>
             )}
 
             <p className="settings-hint">
-              <ShieldCheck size={12} /> 字帖内容全部在本地生成，不会上传；匿名统计不包含内容与个人信息。
+              <ShieldCheck size={12} /> 字帖内容全部在本地生成，不会上传；匿名统计不包含字帖内容、姓名、机器指纹或激活码。
             </p>
           </section>
         </div>
       </div>
+      {licenseOpen && <LicenseDialog onClose={() => setLicenseOpen(false)} />}
+      {privacyOpen && <PrivacyDialog onClose={() => setPrivacyOpen(false)} />}
     </div>
   );
 }
