@@ -51,15 +51,6 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.traffic-lights {
-  gap: 7px;
-}
-
-.tl {
-  width: 11px;
-  height: 11px;
-}
-
 .brand {
   gap: 10px;
 }
