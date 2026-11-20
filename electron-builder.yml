@@ -2,7 +2,6 @@ appId: com.copycraft.app
 productName: CopyCraft
 copyright: Copyright © 2026 CopyCraft
 artifactName: CopyCraft-${version}-${os}-${arch}.${ext}
-afterPack: ./build/after-pack.cjs
 
 # Enables electron-updater: electron-builder writes app-update.yml into the
 # package and latest.yml / latest-mac.yml next to the installers.
@@ -43,9 +42,6 @@ mac:
   # normal "unidentified developer" prompt instead.
   identity: "-"
   hardenedRuntime: false
-  extendInfo:
-    LSHasLocalizedDisplayName: true
-    CFBundleDevelopmentRegion: en
   target:
     - target: dmg
       arch:
@@ -82,7 +78,6 @@ win:
         - x64
 
 nsis:
-  include: installer.nsh
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
