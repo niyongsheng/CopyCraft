@@ -4,6 +4,16 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: '发布 tag（如 v0.3.1）；留空则只打包，不发布'
+        required: false
+        type: string
+      prerelease:
+        description: '标记为预发布'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -24,39 +34,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build:web
-      - name: Add custom domain
-        run: echo "copycraft.looplooptech.com" > dist/CNAME
       - uses: actions/upload-artifact@v4
         with:
           name: web-dist
           path: dist
           if-no-files-found: error
-
-  pages:
-    name: Deploy Pages
-    needs: web
-    # Pages is unavailable while the repository is private on the current plan;
-    # keep the release assets independent from that deployment.
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: web-dist
-          path: dist
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-      - id: deployment
-        uses: actions/deploy-pages@v4
 
   desktop:
     needs: web
@@ -65,6 +47,7 @@ jobs:
     with:
       artifact-path: |
         release/*.dmg
+        release/*.pkg
         release/*.zip
         release/*.exe
         release/*.blockmap
@@ -72,7 +55,7 @@ jobs:
   publish:
     name: Publish release assets
     needs: desktop
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' || inputs.tag != ''
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -86,7 +69,8 @@ jobs:
         run: ls -lh release-assets
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.release.tag_name }}
-          prerelease: ${{ github.event.release.prerelease }}
+          tag_name: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.tag }}
+          target_commitish: ${{ github.sha }}
+          prerelease: ${{ github.event_name == 'release' && github.event.release.prerelease || inputs.prerelease }}
           draft: false
           files: release-assets/**

@@ -36,7 +36,7 @@ jobs:
             node -e "const fs=require('fs'); fs.writeFileSync('electron/license-secret.cjs', 'module.exports = ' + JSON.stringify(process.env.LICENSE_SECRET) + ';\n')"
           fi
       - name: Require license secret for release builds
-        if: github.event_name == 'release'
+        if: github.event_name == 'release' || github.event.inputs.tag != ''
         shell: bash
         run: test -f electron/license-secret.cjs
       - run: npx electron-builder --publish never

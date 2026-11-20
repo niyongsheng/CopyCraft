@@ -1,0 +1,29 @@
+#!/bin/bash
+#
+# Runs after the installer copies Copycraft into /Applications.
+#
+# The desktop build is ad-hoc signed (no Developer ID / notarization). If the
+# app ends up with a com.apple.quarantine attribute, Gatekeeper refuses to
+# launch it. Clearing the flag here means users can open the app right after
+# installing, without running anything in Terminal.
+#
+# pkgbuild passes: $1 = package path, $2 = install destination, $3 = target volume.
+
+APP_NAME="Copycraft 字帖工坊.app"
+
+# $2 is the selected install destination; fall back to /Applications on the
+# target volume when the installer does not provide one.
+INSTALL_DIR="${2:-}"
+if [ -z "$INSTALL_DIR" ]; then
+  INSTALL_DIR="${3%/}/Applications"
+fi
+APP_PATH="$INSTALL_DIR/$APP_NAME"
+
+if [ -d "$APP_PATH" ]; then
+  # Skip the recursive walk when the bundle was never quarantined.
+  if /usr/bin/xattr -p com.apple.quarantine "$APP_PATH" >/dev/null 2>&1; then
+    /usr/bin/xattr -dr com.apple.quarantine "$APP_PATH" 2>/dev/null || true
+  fi
+fi
+
+exit 0
