@@ -16,6 +16,16 @@ files:
 asar: true
 npmRebuild: false
 
+extraResources:
+  - from: LICENSE
+    to: LICENSE
+  - from: PRIVACY.md
+    to: PRIVACY.md
+  - from: THIRD_PARTY_NOTICES.md
+    to: THIRD_PARTY_NOTICES.md
+  - from: ARPHICPL.TXT
+    to: ARPHICPL.TXT
+
 mac:
   category: public.app-category.education
   icon: build/icon.icns

@@ -90,6 +90,26 @@
   text-overflow: ellipsis;
 }
 
+.sidebar-license {
+  flex: none;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-3);
+  font: inherit;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.sidebar-license:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
 /* ── Settings dialog ────────────────────────────────────────── */
 
 .settings-backdrop {
@@ -468,14 +488,6 @@
   background: var(--card-bg);
 }
 
-.about-icon {
-  flex: none;
-  width: 42px;
-  height: 42px;
-  border-radius: 11px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.32);
-}
-
 .about-meta {
   flex: 1;
   min-width: 0;
@@ -495,6 +507,303 @@
 
 .about-card .btn {
   flex: none;
+}
+
+.about-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.about-github {
+  text-decoration: none;
+}
+
+.about-license {
+  white-space: nowrap;
+}
+
+/* ── License dialog ─────────────────────────────────────────── */
+
+.license-backdrop {
+  z-index: 120;
+}
+
+.license-dialog {
+  width: min(600px, 100%);
+}
+
+.license-body {
+  gap: 12px;
+}
+
+.license-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-3);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.license-meta svg {
+  color: var(--primary-2);
+}
+
+.license-text {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--card-bg);
+  color: var(--text-2);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.markdown-doc {
+  padding: 4px 18px 16px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--card-bg);
+  color: var(--text-2);
+  font-size: 11.5px;
+  line-height: 1.72;
+}
+
+.markdown-doc h1 {
+  margin: 16px 0 10px;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.markdown-doc h2 {
+  margin: 20px 0 8px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.markdown-doc > :first-child {
+  margin-top: 12px;
+}
+
+.markdown-doc p {
+  margin: 8px 0;
+}
+
+.markdown-doc ul,
+.markdown-doc ol {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.markdown-doc li {
+  margin: 4px 0;
+}
+
+.markdown-doc li > p {
+  margin: 2px 0;
+}
+
+.markdown-doc strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.markdown-doc a {
+  color: var(--primary-2);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.markdown-doc a:hover {
+  color: var(--text);
+}
+
+.markdown-doc table {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  border-collapse: collapse;
+  overflow-x: auto;
+  font-size: 11px;
+}
+
+.markdown-doc th,
+.markdown-doc td {
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.markdown-doc th {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-3);
+  font-weight: 600;
+}
+
+.markdown-doc code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10.5px;
+}
+
+.markdown-doc hr {
+  margin: 16px 0;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+[data-theme='light'] .markdown-doc th {
+  background: rgba(15, 23, 42, 0.03);
+}
+
+[data-theme='light'] .markdown-doc code {
+  background: rgba(15, 23, 42, 0.05);
+}
+
+.license-details {
+  flex: none;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--card-inset);
+  overflow: hidden;
+}
+
+.license-details summary {
+  padding: 11px 14px;
+  color: var(--text-2);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.license-details[open] summary {
+  border-bottom: 1px solid var(--border);
+}
+
+.license-details .license-text {
+  border: 0;
+  border-radius: 0;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.license-details .markdown-doc {
+  border: 0;
+  border-radius: 0;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.license-attribution {
+  margin: 0;
+  padding: 12px 14px 0;
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.6;
+}
+
+@media (max-width: 560px) {
+  .about-card {
+    flex-wrap: wrap;
+  }
+
+  .about-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* Web-only support card */
+.support-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--card-bg);
+}
+
+.support-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.support-title {
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.support-desc {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+
+.support-afdian {
+  flex: none;
+  display: inline-flex;
+  align-items: stretch;
+  overflow: hidden;
+  border-radius: 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.support-afdian-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 10px;
+  background: #2b2c30;
+  color: #fff;
+}
+
+.support-afdian-brand {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 9px;
+  background: #946ce6;
+  color: #fff;
+  letter-spacing: 0.04em;
+}
+
+.support-afdian:hover .support-afdian-main {
+  background: #3a3b40;
+}
+
+.support-afdian:hover .support-afdian-brand {
+  background: #a57cf0;
+}
+
+[data-theme='light'] .support-card {
+  background: #f8fafd;
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+@media (max-width: 560px) {
+  .support-card {
+    flex-wrap: wrap;
+  }
+
+  .support-afdian {
+    margin-left: auto;
+  }
 }
 
 .update-banner {
@@ -697,6 +1006,16 @@
 
 [data-theme='light'] .sidebar-version {
   color: #7b8698;
+}
+
+[data-theme='light'] .sidebar-license {
+  color: #7b8698;
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+[data-theme='light'] .sidebar-license:hover {
+  color: var(--text);
+  border-color: rgba(15, 23, 42, 0.24);
 }
 
 /* Inspector */

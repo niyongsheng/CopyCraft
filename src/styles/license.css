@@ -116,6 +116,24 @@
   line-height: 1.6;
 }
 
+.license-link {
+  color: #6ea8ff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.license-link:hover {
+  color: #a3ccff;
+}
+
+[data-theme='light'] .license-link {
+  color: #0b5fd7;
+}
+
+[data-theme='light'] .license-link:hover {
+  color: #0848a8;
+}
+
 .license-form {
   display: flex;
   gap: 8px;

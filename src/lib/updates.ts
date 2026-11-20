@@ -1,5 +1,6 @@
 const REPO = 'niyongsheng/Copycraft';
 
+export const REPO_URL = `https://github.com/${REPO}`;
 export const RELEASES_URL = `https://github.com/${REPO}/releases`;
 
 export interface UpdateCheckResult {
