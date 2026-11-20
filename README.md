@@ -4,6 +4,10 @@
 
 # Copycraft 字帖工坊
 
+<p>
+  <strong>简体中文</strong> · <a href="./README.en.md">English</a>
+</p>
+
 ![version](https://img.shields.io/badge/version-0.3.0-105FFF?style=flat-square)
 ![platforms](https://img.shields.io/badge/Web%20%7C%20macOS%20%7C%20Windows-39FF14?style=flat-square&labelColor=10141D)
 ![license](https://img.shields.io/badge/license-MIT-105FFF?style=flat-square)
@@ -15,6 +19,8 @@
 </p>
 
 面向小朋友练字、学校教学与家庭练习的字帖生成器，支持 **Web / macOS / Windows**，内容全部在本地生成。
+
+https://github.com/user-attachments/assets/df6a65b1-7e85-42e2-8657-630cdba68ee2
 
 ## 功能
 
