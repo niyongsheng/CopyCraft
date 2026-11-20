@@ -12,8 +12,9 @@ description: 发布 CopyCraft 新版本：统一版本号、提交、推送 main
 - 版本唯一来源是 `package.json` 的 `version`。Vite 通过 `__APP_VERSION__` 注入 Web，Electron 通过 `app.getVersion()` 读取，无需改源码。
 - 推送 main → `.github/workflows/build.yml` 构建 Web 并自动部署 GitHub Pages（https://copycraft.looplooptech.com，CDN 缓存最多 10 分钟）。
 - 桌面端不随 commit 构建。只有手动运行 `.github/workflows/release.yml` 并填写 tag，才会打包 macOS / Windows 并创建或更新 GitHub Release。
-- 客户端「检查更新」比较 GitHub 最新 Release 的 tag 与 `APP_VERSION`（`src/lib/updates.ts`），所以 tag 必须与 `package.json` 版本一致，且不能用 prerelease，否则客户端查询 `releases/latest` 看不到。
+- 桌面端通过 `electron-updater` 检查、下载并安装更新，读取包内 `app-update.yml` 与 Release 里的 `latest.yml` / `latest-mac.yml`。tag 必须与 `package.json` 版本一致，且不能是 prerelease，否则客户端看不到更新。
 - macOS 为 ad-hoc 签名、未公证：`.pkg` 的 postinstall 会自动清除 `com.apple.quarantine`；`.dmg` 用户需手动执行 `xattr -dr com.apple.quarantine`（README 常见问题已有说明）。
+- **macOS 自动更新的限制**：Squirrel.Mac 要求有效 Developer ID 签名并公证；当前 ad-hoc 构建可以检查/下载更新，但安装会被签名校验拒绝。Windows NSIS 自动更新不受此限制。
 
 ## 0. 前置检查
 
@@ -139,7 +140,14 @@ gh release view vX.Y.Z --json tagName,isDraft,isPrerelease,publishedAt,assets \
 - macOS：`CopyCraft-X.Y.Z-mac-arm64.pkg`、`CopyCraft-X.Y.Z-mac-x64.pkg`
 - macOS：`CopyCraft-X.Y.Z-mac-arm64.zip`、`CopyCraft-X.Y.Z-mac-x64.zip`
 - Windows：`CopyCraft-Setup-X.Y.Z-x64.exe`、`CopyCraft-Portable-X.Y.Z-x64.exe`
+- 自动更新元数据：`latest.yml`（Windows）、`latest-mac.yml`（macOS）
 - 如生成的 `*.blockmap` 文件
+
+确认更新元数据已上传：
+
+```bash
+gh release view vX.Y.Z --json assets -q '.assets[].name' | grep -E 'latest.*\.yml'
+```
 
 校验客户端更新检查能看到本次版本：
 
@@ -170,8 +178,9 @@ gh secret list                          # 需要 COPYCRAFT_LICENSE_SECRET
 gh api repos/niyongsheng/CopyCraft/pages  # Source 应为 GitHub Actions，cname 为 copycraft.looplooptech.com
 ```
 
-- macOS 目前无需 Apple Developer ID（`electron-builder.yml` 中 `mac.identity: "-"` 为 ad-hoc 签名）。
-- 若将来要消除 Gatekeeper 的「无法验证开发者」提示，需要配置 Developer ID 证书 + notarization，并相应修改 `electron-builder.yml` 与 CI secrets。
+- macOS 手动安装目前使用 ad-hoc 签名（`electron-builder.yml` 中 `mac.identity: "-"`）；**自动更新安装**需要 Developer ID 证书 + notarization。
+- 若将来要消除 Gatekeeper 的「无法验证开发者」提示并启用 macOS 自动更新，需要配置 Developer ID 证书 + notarization，并相应修改 `electron-builder.yml` 与 CI secrets。
+- 自动更新依赖 Release 中的 `latest.yml` / `latest-mac.yml`；`release.yml` 的 artifact-path 使用 `release/latest*.yml`（避免把 `builder-debug.yml` 也上传）。
 
 ## 10. 快速清单
 
