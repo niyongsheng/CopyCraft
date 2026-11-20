@@ -81,11 +81,11 @@ jobs:
           {
             echo "## Download"
             echo
-            echo "| 平台 | 安装包 |"
+            echo "| Platform | Installer |"
             echo "| --- | --- |"
-            echo "| macOS（Apple Silicon） | [Copycraft-${VERSION}-mac-arm64.pkg](${BASE}/Copycraft-${VERSION}-mac-arm64.pkg) |"
-            echo "| macOS（Intel） | [Copycraft-${VERSION}-mac-x64.pkg](${BASE}/Copycraft-${VERSION}-mac-x64.pkg) |"
-            echo "| Windows（x64） | [Copycraft-Setup-${VERSION}-x64.exe](${BASE}/Copycraft-Setup-${VERSION}-x64.exe) |"
+            echo "| macOS (Apple Silicon) | [CopyCraft-${VERSION}-mac-arm64.pkg](${BASE}/CopyCraft-${VERSION}-mac-arm64.pkg) |"
+            echo "| macOS (Intel) | [CopyCraft-${VERSION}-mac-x64.pkg](${BASE}/CopyCraft-${VERSION}-mac-x64.pkg) |"
+            echo "| Windows (x64) | [CopyCraft-Setup-${VERSION}-x64.exe](${BASE}/CopyCraft-Setup-${VERSION}-x64.exe) |"
             if [ -n "$PREV_TAG" ]; then
               CHANGES=$(git log --no-merges --reverse --format='- %s (%h)' "${PREV_TAG}..HEAD" | grep -E '^- (feat|fix|perf)(\(|:)' || true)
               echo
