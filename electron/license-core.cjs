@@ -15,9 +15,29 @@
 
 const crypto = require('node:crypto');
 
-/** 产品密钥（64 hex 随机串）。发布前替换为私有值并保持生成/验证两侧一致。 */
-const PRODUCT_SECRET =
-  'REDACTED_SECRET';
+/**
+ * 产品密钥。不要把生产密钥提交到仓库。
+ * 本地开发：设置 COPYCRAFT_LICENSE_SECRET，或创建未跟踪的 electron/license-secret.cjs。
+ * 发布构建：在 CI secret 中注入；公开仓库中的旧密钥应视为已泄露并轮换。
+ */
+function loadProductSecret() {
+  const fromEnv = process.env.COPYCRAFT_LICENSE_SECRET?.trim();
+  if (fromEnv) return fromEnv;
+  try {
+    const local = require('./license-secret.cjs');
+    const value = typeof local === 'string' ? local : local?.secret;
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  } catch {
+    /* 本地密钥文件不存在时使用开发密钥 */
+  }
+  console.warn(
+    '[copycraft] COPYCRAFT_LICENSE_SECRET is not configured; using a development-only secret.',
+  );
+  return 'copycraft-development-only-secret';
+}
+
+/** 开发密钥与生产密钥不同；公开仓库中的旧密钥必须轮换。 */
+const PRODUCT_SECRET = loadProductSecret();
 
 /** Crockford32 字母表（排除 I/L/O/U 防混淆；归一化时做容错映射）。 */
 const CROCKFORD_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';

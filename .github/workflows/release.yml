@@ -61,6 +61,7 @@ jobs:
   desktop:
     needs: web
     uses: ./.github/workflows/build-desktop.yml
+    secrets: inherit
     with:
       artifact-path: |
         release/*.dmg

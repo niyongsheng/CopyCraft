@@ -3,3 +3,6 @@ dist
 release
 .DS_Store
 *.local
+
+# Local license signing secret (never commit)
+electron/license-secret.cjs

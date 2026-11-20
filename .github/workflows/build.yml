@@ -34,3 +34,4 @@ jobs:
   desktop:
     needs: web
     uses: ./.github/workflows/build-desktop.yml
+    secrets: inherit
