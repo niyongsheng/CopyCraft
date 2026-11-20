@@ -185,6 +185,11 @@ export type SheetModel =
   | AbacusModel
   | ClockModel;
 
+/** A4 pages occupied by a model (pen and poem models render on a single page). */
+export function pageCountOf(model: SheetModel): number {
+  return 'pages' in model ? model.pages.length : 1;
+}
+
 function chunk<T>(items: T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
@@ -244,6 +249,66 @@ function gridLayout(settings: SheetSettings, showPinyin: boolean): GridLayout {
   return { metrics, cols, cellW, pinyinH, rowH, rowsPerPage, charPx };
 }
 
+/** Turn grid rows into pages with the shared geometry. */
+function gridModel(layout: GridLayout, rows: GridRowModel[]): GridModel {
+  const blank = () => blankRow(layout.cols);
+  return {
+    kind: 'grid',
+    metrics: layout.metrics,
+    cellW: layout.cellW,
+    rowH: layout.rowH,
+    pinyinH: layout.pinyinH,
+    charPx: layout.charPx,
+    cols: layout.cols,
+    pages: paginate(rows, layout.rowsPerPage, blank).map((pageRows) => ({ rows: pageRows })),
+  };
+}
+
+interface FourLineLayout {
+  metrics: Metrics;
+  cols: number;
+  cellW: number;
+  rowH: number;
+  rowsPerPage: number;
+  charPx: number;
+}
+
+/** Geometry shared by the English four-line sheets. */
+function fourLineLayout(settings: SheetSettings): FourLineLayout {
+  const metrics = metricsFor(settings);
+  const nominal = Math.max(20, settings.gridSize);
+  const cols = Math.max(1, Math.floor(metrics.contentW / nominal));
+  const cellW = metrics.contentW / cols;
+  const rowH = Math.round(cellW * 1.12);
+  const pitch = rowH + settings.lineSpacing;
+  const rowsPerPage = Math.max(1, Math.floor((metrics.contentH + settings.lineSpacing) / pitch));
+  const charPx = cellW * (settings.fontSize / 100);
+  return { metrics, cols, cellW, rowH, rowsPerPage, charPx };
+}
+
+function emptyFourLineRow(): FourLineRowModel {
+  return { text: '', repeatCount: 0, paragraph: false, empty: true };
+}
+
+/** Turn four-line rows into pages with the shared geometry. */
+function fourLineModel(
+  layout: FourLineLayout,
+  gap: number,
+  rows: FourLineRowModel[],
+): FourLineModel {
+  return {
+    kind: 'fourline',
+    metrics: layout.metrics,
+    cellW: layout.cellW,
+    rowH: layout.rowH,
+    charPx: layout.charPx,
+    gap,
+    pages: paginate(rows, layout.rowsPerPage, emptyFourLineRow).map((pageRows) => ({
+      rows: pageRows,
+    })),
+  };
+}
+
 function buildGridModel(
   type: SheetType,
   settings: SheetSettings,
@@ -254,10 +319,8 @@ function buildGridModel(
   if (type === 'blank') return buildBlankModel(settings);
 
   const showPinyin = settings.showPinyin && (type === 'hanzi' || type === 'name');
-  const { metrics, cols, cellW, pinyinH, rowH, rowsPerPage, charPx } = gridLayout(
-    settings,
-    showPinyin,
-  );
+  const layout = gridLayout(settings, showPinyin);
+  const { cols } = layout;
   const paragraph = type === 'hanziParagraph';
 
   const blank = () => blankRow(cols);
@@ -316,25 +379,14 @@ function buildGridModel(
     if (rows.length === 0) rows.push(blank());
   }
 
-  return {
-    kind: 'grid',
-    metrics,
-    cellW,
-    rowH,
-    pinyinH,
-    charPx,
-    cols,
-    pages: paginate(rows, rowsPerPage, blank).map((pageRows) => ({ rows: pageRows })),
-  };
+  return gridModel(layout, rows);
 }
 
 /** 看拼音写词语 / 生字默写 / 听写纸：词语只提供拼音和空格。 */
 function buildDictationModel(settings: SheetSettings, content: string): GridModel {
   const showPinyin = settings.showPinyin;
-  const { metrics, cols, cellW, pinyinH, rowH, rowsPerPage, charPx } = gridLayout(
-    settings,
-    showPinyin,
-  );
+  const layout = gridLayout(settings, showPinyin);
+  const { cols } = layout;
   const blank = () => blankRow(cols);
   const rows: GridRowModel[] = [];
 
@@ -352,36 +404,16 @@ function buildDictationModel(settings: SheetSettings, content: string): GridMode
 
   if (rows.length === 0) rows.push(blank());
 
-  return {
-    kind: 'grid',
-    metrics,
-    cellW,
-    rowH,
-    pinyinH,
-    charPx,
-    cols,
-    pages: paginate(rows, rowsPerPage, blank).map((pageRows) => ({ rows: pageRows })),
-  };
+  return gridModel(layout, rows);
 }
 
 /** 空白练习纸：整页空白格子，仅由格子样式和标题决定。 */
 function buildBlankModel(settings: SheetSettings): GridModel {
-  const { metrics, cols, cellW, rowH, pinyinH, rowsPerPage, charPx } = gridLayout(
-    settings,
-    false,
+  const layout = gridLayout(settings, false);
+  const rows: GridRowModel[] = Array.from({ length: layout.rowsPerPage }, () =>
+    blankRow(layout.cols),
   );
-  const blank = () => blankRow(cols);
-  const rows: GridRowModel[] = Array.from({ length: rowsPerPage }, blank);
-  return {
-    kind: 'grid',
-    metrics,
-    cellW,
-    rowH,
-    pinyinH,
-    charPx,
-    cols,
-    pages: [{ rows }],
-  };
+  return gridModel(layout, rows);
 }
 
 const WORD_SLOTS_MAX = 3;
@@ -399,10 +431,8 @@ function pinyinLabel(text: string): string {
  */
 function buildWordGridModel(settings: SheetSettings, content: string): GridModel {
   const showPinyin = settings.showPinyin;
-  const { metrics, cols, cellW, pinyinH, rowH, rowsPerPage, charPx } = gridLayout(
-    settings,
-    showPinyin,
-  );
+  const layout = gridLayout(settings, showPinyin);
+  const { cols } = layout;
 
   const entries = content
     .split('\n')
@@ -453,16 +483,7 @@ function buildWordGridModel(settings: SheetSettings, content: string): GridModel
       })
     : [blank()];
 
-  return {
-    kind: 'grid',
-    metrics,
-    cellW,
-    rowH,
-    pinyinH,
-    charPx,
-    cols,
-    pages: paginate(rows, rowsPerPage, blank).map((pageRows) => ({ rows: pageRows })),
-  };
+  return gridModel(layout, rows);
 }
 
 function emptyNameCell(): NameStrokeCell {
@@ -557,12 +578,15 @@ function breakParagraph(text: string, maxWidth: number, font: string): string[] 
   const clean = text.replace(/\s+/g, ' ').trim();
   if (!clean) return [];
   const words = clean.split(' ');
+  const spaceWidth = measureText(' ', font);
   const lines: string[] = [];
   let current = '';
+  let currentWidth = 0;
+
   for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    if (measureText(candidate, font) <= maxWidth || !current) {
-      if (!current && measureText(candidate, font) > maxWidth) {
+    const wordWidth = measureText(word, font);
+    if (!current) {
+      if (wordWidth > maxWidth) {
         // extremely long single word — hard break
         let part = '';
         for (const ch of word) {
@@ -575,11 +599,22 @@ function breakParagraph(text: string, maxWidth: number, font: string): string[] 
         }
         current = part;
       } else {
-        current = candidate;
+        current = word;
       }
+      currentWidth = measureText(current, font);
+      continue;
+    }
+
+    // Measure each word once and accumulate, instead of re-measuring the
+    // whole line for every word (quadratic on long paragraphs).
+    const candidateWidth = currentWidth + spaceWidth + wordWidth;
+    if (candidateWidth <= maxWidth) {
+      current = `${current} ${word}`;
+      currentWidth = candidateWidth;
     } else {
       lines.push(current);
       current = word;
+      currentWidth = wordWidth;
     }
   }
   if (current) lines.push(current);
@@ -587,14 +622,7 @@ function breakParagraph(text: string, maxWidth: number, font: string): string[] 
 }
 
 function buildEnglishWordModel(settings: SheetSettings, content: string): FourLineModel {
-  const metrics = metricsFor(settings);
-  const nominal = Math.max(20, settings.gridSize);
-  const cols = Math.max(1, Math.floor(metrics.contentW / nominal));
-  const cellW = metrics.contentW / cols;
-  const rowH = Math.round(cellW * 1.12);
-  const pitch = rowH + settings.lineSpacing;
-  const rowsPerPage = Math.max(1, Math.floor((metrics.contentH + settings.lineSpacing) / pitch));
-  const charPx = cellW * (settings.fontSize / 100);
+  const layout = fourLineLayout(settings);
   const rows: FourLineRowModel[] = [];
 
   for (const line of content.split('\n')) {
@@ -615,22 +643,7 @@ function buildEnglishWordModel(settings: SheetSettings, content: string): FourLi
     rows.push({ text: '', repeatCount: 0, paragraph: false, empty: false });
   }
 
-  const pages = paginate(rows, rowsPerPage, () => ({
-    text: '',
-    repeatCount: 0,
-    paragraph: false,
-    empty: true,
-  })).map((pageRows) => ({ rows: pageRows }));
-
-  return {
-    kind: 'fourline',
-    metrics,
-    cellW,
-    rowH,
-    charPx,
-    gap: cellW * 0.6,
-    pages,
-  };
+  return fourLineModel(layout, layout.cellW * 0.6, rows);
 }
 
 function buildFourLineModel(
@@ -640,22 +653,15 @@ function buildFourLineModel(
 ): FourLineModel {
   if (type === 'englishWords') return buildEnglishWordModel(settings, content);
 
-  const metrics = metricsFor(settings);
-  const nominal = Math.max(20, settings.gridSize);
-  const cols = Math.max(1, Math.floor(metrics.contentW / nominal));
-  const cellW = metrics.contentW / cols;
-  const rowH = Math.round(cellW * 1.12);
-  const pitch = rowH + settings.lineSpacing;
-  const rowsPerPage = Math.max(1, Math.floor((metrics.contentH + settings.lineSpacing) / pitch));
-  const charPx = cellW * (settings.fontSize / 100);
-  const gap = cellW * (type === 'pinyin' ? 0.35 : 0.6);
-  const fontCss = `${settings.fontWeight} ${charPx}px ${fontStack(settings.fontId)}`;
+  const layout = fourLineLayout(settings);
+  const gap = layout.cellW * (type === 'pinyin' ? 0.35 : 0.6);
+  const fontCss = `${settings.fontWeight} ${layout.charPx}px ${fontStack(settings.fontId)}`;
   const paragraph = type === 'englishParagraph';
   const rawLines = content.split('\n').map((l) => l.trimEnd());
   const rows: FourLineRowModel[] = [];
 
   if (paragraph) {
-    const lines = breakParagraph(content, metrics.contentW, fontCss);
+    const lines = breakParagraph(content, layout.metrics.contentW, fontCss);
     for (const line of lines) {
       rows.push({ text: line, repeatCount: 1, paragraph: true, empty: false });
     }
@@ -666,28 +672,13 @@ function buildFourLineModel(
       const w = measureText(text, fontCss);
       const repeatCount = Math.max(
         1,
-        Math.min(80, Math.floor((metrics.contentW + gap) / (w + gap))),
+        Math.min(80, Math.floor((layout.metrics.contentW + gap) / (w + gap))),
       );
       rows.push({ text, repeatCount, paragraph: false, empty: false });
     }
   }
 
-  const pages = paginate(rows, rowsPerPage, () => ({
-    text: '',
-    repeatCount: 0,
-    paragraph: false,
-    empty: true,
-  })).map((pageRows) => ({ rows: pageRows }));
-
-  return {
-    kind: 'fourline',
-    metrics,
-    cellW,
-    rowH,
-    charPx,
-    gap,
-    pages,
-  };
+  return fourLineModel(layout, gap, rows);
 }
 
 function buildPenModel(settings: SheetSettings): PenModel {

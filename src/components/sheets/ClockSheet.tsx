@@ -1,6 +1,7 @@
+import { memo } from 'react';
 import { formatTime } from '../../lib/generators/clock';
 import type { ClockModel } from '../../lib/model';
-import type { ClockProblem, SheetSettings } from '../../types';
+import type { SheetSettings } from '../../types';
 import { PageFrame } from '../PageFrame';
 
 const TICKS = Array.from({ length: 60 }, (_, i) => {
@@ -43,21 +44,25 @@ function roman(hour: number): string {
   return ROMAN[hour % 12];
 }
 
-function ClockFace({
-  problem,
+const ClockFace = memo(function ClockFace({
+  hour,
+  minute,
   size,
-  settings,
+  ink,
+  face,
+  use24h,
   showHands,
 }: {
-  problem: ClockProblem;
+  hour: number;
+  minute: number;
   size: number;
-  settings: SheetSettings;
+  ink: string;
+  face: SheetSettings['clockFace'];
+  use24h: boolean;
   showHands: boolean;
 }) {
-  const ink = settings.inkColor;
-  const hourAngle =
-    (((problem.hour % 12) + problem.minute / 60) * 30 - 90) * (Math.PI / 180);
-  const minuteAngle = (problem.minute * 6 - 90) * (Math.PI / 180);
+  const hourAngle = (((hour % 12) + minute / 60) * 30 - 90) * (Math.PI / 180);
+  const minuteAngle = (minute * 6 - 90) * (Math.PI / 180);
   const hand = (angle: number, length: number) => ({
     x: 50 + Math.cos(angle) * length,
     y: 50 + Math.sin(angle) * length,
@@ -87,7 +92,7 @@ function ClockFace({
           strokeLinecap="round"
         />
       ))}
-      {settings.clockFace !== 'none' &&
+      {face !== 'none' &&
         HOUR_MARKS.map((mark) => (
           <text
             key={mark.hour}
@@ -96,19 +101,19 @@ function ClockFace({
             textAnchor="middle"
             dominantBaseline="central"
             fontFamily={
-              settings.clockFace === 'roman'
+              face === 'roman'
                 ? '"Times New Roman", serif'
                 : '"Helvetica Neue", Arial, sans-serif'
             }
-            fontSize={settings.clockFace === 'roman' ? 5.6 : 7.4}
+            fontSize={face === 'roman' ? 5.6 : 7.4}
             fontWeight={500}
             fill={ink}
           >
-            {settings.clockFace === 'roman' ? roman(mark.hour) : mark.hour}
+            {face === 'roman' ? roman(mark.hour) : mark.hour}
           </text>
         ))}
-      {settings.clock24h &&
-        settings.clockFace !== 'none' &&
+      {use24h &&
+        face !== 'none' &&
         INNER_MARKS.map((mark) => (
           <text
             key={mark.label}
@@ -149,7 +154,7 @@ function ClockFace({
       <circle cx="50" cy="50" r="2.1" fill={ink} />
     </svg>
   );
-}
+});
 
 export function ClockSheet({
   model,
@@ -184,9 +189,12 @@ export function ClockSheet({
                 }}
               >
                 <ClockFace
-                  problem={problem}
+                  hour={problem.hour}
+                  minute={problem.minute}
                   size={model.clockSize}
-                  settings={settings}
+                  ink={settings.inkColor}
+                  face={settings.clockFace}
+                  use24h={settings.clock24h}
                   showHands={showHands}
                 />
                 <div

@@ -1,5 +1,5 @@
 import type { ClockProblem, SheetSettings } from '../../types';
-import { int, mulberry32, pick } from '../random';
+import { collectUnique, int, mulberry32, pick } from '../random';
 
 export function generateClocks(settings: SheetSettings, seed: number): ClockProblem[] {
   const rng = mulberry32(seed + 7001);
@@ -10,19 +10,12 @@ export function generateClocks(settings: SheetSettings, seed: number): ClockProb
     return int(rng, 0, 59);
   };
   const maxHour = settings.clock24h ? 24 : 12;
-  const out: ClockProblem[] = [];
-  const seen = new Set<string>();
-  let guard = 0;
-  while (out.length < count && guard < 3000) {
-    guard += 1;
-    const hour = int(rng, 1, maxHour);
-    const minute = minutes(rng);
-    const key = `${hour}:${minute}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push({ id: out.length + 1, hour, minute });
-  }
-  return out;
+  return collectUnique(
+    count,
+    3000,
+    () => ({ id: 0, hour: int(rng, 1, maxHour), minute: minutes(rng) }),
+    (p) => `${p.hour}:${p.minute}`,
+  );
 }
 
 export function formatTime(p: ClockProblem, use24h: boolean): string {

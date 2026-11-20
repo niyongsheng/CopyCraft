@@ -31,6 +31,7 @@ export function PenSheet({
         {model.rows.map((patternId, rowIndex) => (
           <div
             className="grid-row"
+            data-grid-tile=""
             key={rowIndex}
             style={{
               height: model.rowH,

@@ -17,3 +17,29 @@ export const int = (rng: Rng, min: number, max: number) =>
 
 export const pick = <T,>(rng: Rng, list: readonly T[]): T =>
   list[Math.min(list.length - 1, Math.floor(rng() * list.length))];
+
+/**
+ * Collect `count` unique items, retrying until `guardCap` attempts are reached.
+ * `make` returns null when a candidate is unusable (e.g. violates a constraint).
+ * Ids are assigned in insertion order.
+ */
+export function collectUnique<T extends { id: number }>(
+  count: number,
+  guardCap: number,
+  make: () => T | null,
+  keyOf: (item: T) => string,
+): T[] {
+  const out: T[] = [];
+  const seen = new Set<string>();
+  let guard = 0;
+  while (out.length < count && guard < guardCap) {
+    guard += 1;
+    const item = make();
+    if (!item) continue;
+    const key = keyOf(item);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ ...item, id: out.length + 1 });
+  }
+  return out;
+}

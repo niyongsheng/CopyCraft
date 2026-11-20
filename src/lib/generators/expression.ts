@@ -1,5 +1,5 @@
 import type { SheetSettings } from '../../types';
-import { int, mulberry32, pick } from '../random';
+import { collectUnique, int, mulberry32, pick } from '../random';
 
 export interface ExpressionProblemData {
   id: number;
@@ -50,50 +50,39 @@ export function generateExpression(settings: SheetSettings, seed: number): Expre
   const steps = settings.expressionSteps === 3 ? 3 : 2;
   const operations = operationsFor(settings.expressionOperation);
   const mixed = settings.expressionOperation === 'mixed';
-  const out: ExpressionProblemData[] = [];
-  const seen = new Set<string>();
-  let guard = 0;
 
-  while (out.length < count && guard < 12000) {
-    guard += 1;
-    let current = { text: String(int(rng, 1, range)), value: 0 };
-    current.value = Number(current.text);
-    let ok = true;
+  return collectUnique(
+    count,
+    12000,
+    () => {
+      let current = { text: String(int(rng, 1, range)), value: 0 };
+      current.value = Number(current.text);
 
-    for (let step = 0; step < steps; step += 1) {
-      const op = pick(rng, operations);
-      let next: number;
-      if (op === '÷') {
-        const divisors = divisorsOf(current.value);
-        if (divisors.length === 0) {
-          ok = false;
-          break;
+      for (let step = 0; step < steps; step += 1) {
+        const op = pick(rng, operations);
+        let next: number;
+        if (op === '÷') {
+          const divisors = divisorsOf(current.value);
+          if (divisors.length === 0) return null;
+          next = pick(rng, divisors);
+        } else if (op === '×') {
+          next = int(rng, 2, 9);
+        } else {
+          next = int(rng, 1, range);
         }
-        next = pick(rng, divisors);
-      } else if (op === '×') {
-        next = int(rng, 2, 9);
-      } else {
-        next = int(rng, 1, range);
+
+        const combined = combine(current, op, next);
+        if (!combined) return null;
+
+        // 混合运算不加括号会产生歧义，因此始终给左侧复合式加括号。
+        if ((mixed || settings.expressionParentheses) && step > 0) {
+          combined.text = `(${current.text}) ${op} ${next}`;
+        }
+        current = combined;
       }
 
-      const combined = combine(current, op, next);
-      if (!combined) {
-        ok = false;
-        break;
-      }
-
-      // 混合运算不加括号会产生歧义，因此始终给左侧复合式加括号。
-      if ((mixed || settings.expressionParentheses) && step > 0) {
-        combined.text = `(${current.text}) ${op} ${next}`;
-      }
-      current = combined;
-    }
-
-    if (!ok) continue;
-    const expression = current.text;
-    if (seen.has(expression)) continue;
-    seen.add(expression);
-    out.push({ id: out.length + 1, expression, answer: current.value });
-  }
-  return out;
+      return { id: 0, expression: current.text, answer: current.value };
+    },
+    (p) => p.expression,
+  );
 }

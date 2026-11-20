@@ -1,5 +1,5 @@
 import type { SheetSettings } from '../../types';
-import { int, mulberry32, pick } from '../random';
+import { collectUnique, int, mulberry32, pick } from '../random';
 
 export interface AbacusProblemData {
   id: number;
@@ -18,62 +18,50 @@ export function generateAbacus(settings: SheetSettings, seed: number): AbacusPro
   const max = 10 ** rods - 1;
 
   if (settings.abacusMode !== 'calc') {
-    const out: AbacusProblemData[] = [];
-    const seen = new Set<number>();
-    let guard = 0;
-    while (out.length < count && guard < 4000) {
-      guard += 1;
-      const value = int(rng, min, max);
-      if (seen.has(value)) continue;
-      seen.add(value);
-      out.push({ id: out.length + 1, value, answer: value });
-    }
-    return out;
+    return collectUnique(
+      count,
+      4000,
+      () => {
+        const value = int(rng, min, max);
+        return { id: 0, value, answer: value };
+      },
+      (p) => String(p.value),
+    );
   }
 
   const terms = Math.max(2, Math.min(4, settings.abacusTerms));
-  const out: AbacusProblemData[] = [];
-  const seen = new Set<string>();
-  let guard = 0;
-  while (out.length < count && guard < 8000) {
-    guard += 1;
-    let current = int(rng, 1, max);
-    const parts: (number | string)[] = [current];
-    let ok = true;
 
-    for (let i = 1; i < terms; i += 1) {
-      const op =
-        settings.mathOperation === 'both'
-          ? pick(rng, ['+', '−'] as const)
-          : settings.mathOperation === 'sub'
-            ? '−'
-            : '+';
+  return collectUnique(
+    count,
+    8000,
+    () => {
+      let current = int(rng, 1, max);
+      const parts: (number | string)[] = [current];
 
-      if (op === '+') {
-        const room = max - current;
-        if (room <= 0) {
-          ok = false;
-          break;
+      for (let i = 1; i < terms; i += 1) {
+        const op =
+          settings.mathOperation === 'both'
+            ? pick(rng, ['+', '−'] as const)
+            : settings.mathOperation === 'sub'
+              ? '−'
+              : '+';
+
+        if (op === '+') {
+          const room = max - current;
+          if (room <= 0) return null;
+          const b = int(rng, 1, Math.min(room, Math.max(1, Math.floor(max / 2))));
+          current += b;
+          parts.push('+', b);
+        } else {
+          if (current <= 0) return null;
+          const b = int(rng, 1, current);
+          current -= b;
+          parts.push('−', b);
         }
-        const b = int(rng, 1, Math.min(room, Math.max(1, Math.floor(max / 2))));
-        current += b;
-        parts.push('+', b);
-      } else {
-        if (current <= 0) {
-          ok = false;
-          break;
-        }
-        const b = int(rng, 1, current);
-        current -= b;
-        parts.push('−', b);
       }
-    }
 
-    if (!ok) continue;
-    const expression = `${parts.join(' ')} =`;
-    if (seen.has(expression)) continue;
-    seen.add(expression);
-    out.push({ id: out.length + 1, expression, answer: current });
-  }
-  return out;
+      return { id: 0, expression: `${parts.join(' ')} =`, answer: current };
+    },
+    (p) => p.expression ?? '',
+  );
 }

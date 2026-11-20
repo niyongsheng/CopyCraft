@@ -53,6 +53,7 @@ export function GridPages<TCell>({
             {page.rows.map((row, rowIndex) => (
               <div
                 className="grid-row"
+                data-grid-tile=""
                 key={rowIndex}
                 style={{
                   height: model.rowH,

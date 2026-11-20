@@ -1,10 +1,11 @@
+import { memo } from 'react';
 import { ABACUS, abacusViewBox } from '../lib/abacus';
 
 /**
  * 一档一上珠四珠的算盘示意图。
  * `value` 为空时所有珠子处于静止位置（留给学生拨珠）。
  */
-export function Abacus({
+export const Abacus = memo(function Abacus({
   rods,
   value,
   width,
@@ -117,4 +118,4 @@ export function Abacus({
       })}
     </svg>
   );
-}
+});

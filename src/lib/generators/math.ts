@@ -1,5 +1,5 @@
 import type { Problem, SheetSettings, SheetType, VerticalProblem } from '../../types';
-import { int, mulberry32, pick, type Rng } from '../random';
+import { collectUnique, int, mulberry32, pick, type Rng } from '../random';
 
 const BLANK = '___';
 
@@ -76,17 +76,7 @@ export function generateMath(
   };
 
   // add-level uniqueness for tiny ranges that can't fill the requested count
-  const out: Problem[] = [];
-  const seen = new Set<string>();
-  let guard = 0;
-  while (out.length < count && guard < 4000) {
-    guard += 1;
-    const p = make(rng);
-    if (seen.has(p.expression)) continue;
-    seen.add(p.expression);
-    out.push({ ...p, id: out.length + 1 });
-  }
-  return out;
+  return collectUnique(count, 4000, () => make(rng), (p) => p.expression);
 }
 
 /** 加法是否至少产生一次进位（含连续进位）。 */
@@ -132,62 +122,51 @@ export function generateVertical(settings: SheetSettings, seed: number): Vertica
   const min = digits === 3 ? 100 : 10;
   const max = digits === 3 ? 999 : 99;
   const operations = verticalOperations(settings.verticalOperation);
-  const out: VerticalProblem[] = [];
-  const seen = new Set<string>();
-  let guard = 0;
 
-  while (out.length < count && guard < 8000) {
-    guard += 1;
-    const op = pick(rng, operations);
-    let a = 0;
-    let b = 0;
-    let answer = 0;
-    let quotient: number | undefined;
-    let remainder: number | undefined;
+  return collectUnique(
+    count,
+    8000,
+    () => {
+      const op = pick(rng, operations);
+      let a = 0;
+      let b = 0;
+      let answer = 0;
+      let quotient: number | undefined;
+      let remainder: number | undefined;
 
-    if (op === '+' || op === '−') {
-      a = int(rng, min, max);
-      b = int(rng, min, max);
-      if (op === '−' && b > a) [a, b] = [b, a];
+      if (op === '+' || op === '−') {
+        a = int(rng, min, max);
+        b = int(rng, min, max);
+        if (op === '−' && b > a) [a, b] = [b, a];
 
-      const needsCarry = op === '+' ? hasCarry(a, b) : hasBorrow(a, b);
-      if (settings.verticalCarry === 'require' && !needsCarry) continue;
-      if (settings.verticalCarry === 'avoid' && needsCarry) continue;
-      answer = op === '+' ? a + b : a - b;
-    } else if (op === '×') {
-      a = int(rng, min, max);
-      b = int(rng, 2, 9);
-      answer = a * b;
-    } else {
-      b = int(rng, 2, 9);
-      if (settings.verticalAllowRemainder) {
-        a = int(rng, Math.max(b + 1, min), max);
-        quotient = Math.floor(a / b);
-        remainder = a % b;
+        const needsCarry = op === '+' ? hasCarry(a, b) : hasBorrow(a, b);
+        if (settings.verticalCarry === 'require' && !needsCarry) return null;
+        if (settings.verticalCarry === 'avoid' && needsCarry) return null;
+        answer = op === '+' ? a + b : a - b;
+      } else if (op === '×') {
+        a = int(rng, min, max);
+        b = int(rng, 2, 9);
+        answer = a * b;
       } else {
-        const quotientMin = Math.max(1, Math.ceil(min / b));
-        const quotientMax = Math.floor(max / b);
-        if (quotientMax < quotientMin) continue;
-        quotient = int(rng, quotientMin, quotientMax);
-        a = b * quotient;
-        remainder = 0;
+        b = int(rng, 2, 9);
+        if (settings.verticalAllowRemainder) {
+          a = int(rng, Math.max(b + 1, min), max);
+          quotient = Math.floor(a / b);
+          remainder = a % b;
+        } else {
+          const quotientMin = Math.max(1, Math.ceil(min / b));
+          const quotientMax = Math.floor(max / b);
+          if (quotientMax < quotientMin) return null;
+          quotient = int(rng, quotientMin, quotientMax);
+          a = b * quotient;
+          remainder = 0;
+        }
+        answer = quotient;
       }
-      answer = quotient;
-    }
 
-    const key = `${a}${op}${b}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push({
-      id: out.length + 1,
-      a,
-      b,
-      op,
-      answer,
-      quotient,
-      remainder,
-    });
-  }
-  return out;
+      return { id: 0, a, b, op, answer, quotient, remainder };
+    },
+    (p) => `${p.a}${p.op}${p.b}`,
+  );
 }
 

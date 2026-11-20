@@ -30,6 +30,7 @@ export function FourLineSheet({
             {page.rows.map((row, rowIndex) => (
               <div
                 className="fourline-row"
+                data-grid-tile=""
                 key={rowIndex}
                 style={{
                   height: model.rowH,

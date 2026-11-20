@@ -1,5 +1,6 @@
 import { trackEvent } from '@aptabase/electron/renderer';
 import type { AnalyticsState } from '../types/desktop';
+import { isDesktop } from './platform';
 import { APP_VERSION } from './version';
 
 /**
@@ -25,10 +26,6 @@ let webInitialized = false;
 let webTrackEvent:
   | ((eventName: string, props?: Record<string, string | number | boolean>) => Promise<void>)
   | null = null;
-
-function isDesktop(): boolean {
-  return Boolean(window.desktop?.isElectron);
-}
 
 function readWebPreference(): boolean {
   try {
