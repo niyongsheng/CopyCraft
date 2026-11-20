@@ -4,7 +4,8 @@
   "version": "0.3.1",
   "type": "module",
   "main": "electron/main.cjs",
-  "description": "CopyCraft 字帖工坊 — 支持 Web、macOS 与 Windows 的字帖生成器",
+  "desktopName": "copycraft.desktop",
+  "description": "CopyCraft 字帖工坊 — 支持 Web、macOS、Windows 与 Linux 的字帖生成器",
   "author": "CopyCraft",
   "license": "MIT",
   "repository": {
@@ -25,6 +26,7 @@
     "pack:desktop": "npm run build:web && electron-builder --dir",
     "dist:mac": "npm run build:web && electron-builder --mac --publish never",
     "dist:win": "npm run build:web && electron-builder --win --publish never",
+    "dist:linux": "npm run build:web && electron-builder --linux --publish never",
     "icons": "node scripts/make-icons.mjs",
     "dist:win:zip": "npm run build:web && electron-builder --win zip --x64 --publish never",
     "license:gen": "node scripts/gen-license.cjs",

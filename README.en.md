@@ -10,7 +10,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.3.1-105FFF?style=flat-square" alt="version" />
-  <img src="https://img.shields.io/badge/Web%20%7C%20macOS%20%7C%20Windows-39FF14?style=flat-square&amp;labelColor=10141D" alt="platforms" />
+  <img src="https://img.shields.io/badge/Web%20%7C%20macOS%20%7C%20Windows%20%7C%20Linux-39FF14?style=flat-square&amp;labelColor=10141D" alt="platforms" />
   <img src="https://img.shields.io/badge/license-MIT-105FFF?style=flat-square" alt="license" />
 </p>
 
@@ -20,7 +20,7 @@
   <a href="https://pan.baidu.com/s/13Fdi5URwlZdvJKHMmYfZIg?pwd=58f7">Baidu Netdisk</a>
 </p>
 
-<p align="center">A worksheet generator for kids' handwriting practice, classroom teaching, and home practice. Supports <strong>Web / macOS / Windows</strong>, and all content is generated locally.</p>
+<p align="center">A worksheet generator for kids' handwriting practice, classroom teaching, and home practice. Supports <strong>Web / macOS / Windows / Linux</strong>, and all content is generated locally.</p>
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/9242b247-f713-4985-9f77-98c886632750" alt="CopyCraft demo" width="880" />
@@ -47,6 +47,7 @@ npm run build:web    # Static site, output to dist/
 npm run dist:mac     # macOS dmg / pkg / zip
 npm run dist:win     # Windows NSIS / portable
 npm run dist:win:zip # Windows portable zip
+npm run dist:linux   # Linux AppImage / deb
 npm run pack:desktop # Unpacked .app / win-unpacked
 ```
 
@@ -63,6 +64,11 @@ The desktop build is ad-hoc signed and not notarized, so Gatekeeper quarantines 
   ```bash
   xattr -dr com.apple.quarantine "/Applications/CopyCraft.app"
   ```
+
+**How do I install on Linux?**
+
+- AppImage: run `chmod +x CopyCraft-*.AppImage`, then launch it.
+- deb: run `sudo apt install ./CopyCraft-*.deb`.
 
 ## Contact
 

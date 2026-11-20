@@ -50,6 +50,8 @@ jobs:
         release/*.pkg
         release/*.zip
         release/*.exe
+        release/*.AppImage
+        release/*.deb
         release/*.blockmap
         release/latest*.yml
 
@@ -87,6 +89,7 @@ jobs:
             echo "| macOS (Apple Silicon) | [CopyCraft-${VERSION}-mac-arm64.pkg](${BASE}/CopyCraft-${VERSION}-mac-arm64.pkg) |"
             echo "| macOS (Intel) | [CopyCraft-${VERSION}-mac-x64.pkg](${BASE}/CopyCraft-${VERSION}-mac-x64.pkg) |"
             echo "| Windows (x64) | [CopyCraft-Setup-${VERSION}-x64.exe](${BASE}/CopyCraft-Setup-${VERSION}-x64.exe) |"
+            echo "| Linux (x64) | [AppImage](${BASE}/CopyCraft-${VERSION}-linux-x86_64.AppImage) / [.deb](${BASE}/CopyCraft-${VERSION}-linux-amd64.deb) |"
             if [ -n "$PREV_TAG" ]; then
               CHANGES=$(git log --no-merges --reverse --format='- %s (%h)' "${PREV_TAG}..HEAD" | grep -E '^- (feat|fix|perf)(\(|:)' || true)
               echo

@@ -11,10 +11,10 @@ description: 发布 CopyCraft 新版本：统一版本号、提交、推送 main
 
 - 版本唯一来源是 `package.json` 的 `version`。Vite 通过 `__APP_VERSION__` 注入 Web，Electron 通过 `app.getVersion()` 读取，无需改源码。
 - 推送 main → `.github/workflows/build.yml` 构建 Web 并自动部署 GitHub Pages（https://copycraft.looplooptech.com，CDN 缓存最多 10 分钟）。
-- 桌面端不随 commit 构建。只有手动运行 `.github/workflows/release.yml` 并填写 tag，才会打包 macOS / Windows 并创建或更新 GitHub Release。
-- 桌面端通过 `electron-updater` 检查、下载并安装更新，读取包内 `app-update.yml` 与 Release 里的 `latest.yml` / `latest-mac.yml`。tag 必须与 `package.json` 版本一致，且不能是 prerelease，否则客户端看不到更新。
+- 桌面端不随 commit 构建。只有手动运行 `.github/workflows/release.yml` 并填写 tag，才会打包 macOS / Windows / Linux 并创建或更新 GitHub Release。
+- 桌面端通过 `electron-updater` 检查、下载并安装更新，读取包内 `app-update.yml` 与 Release 里的 `latest.yml` / `latest-mac.yml` / `latest-linux.yml`。tag 必须与 `package.json` 版本一致，且不能是 prerelease，否则客户端看不到更新。
 - macOS 为 ad-hoc 签名、未公证：`.pkg` 的 postinstall 会自动清除 `com.apple.quarantine`；`.dmg` 用户需手动执行 `xattr -dr com.apple.quarantine`（README 常见问题已有说明）。
-- **macOS 自动更新的限制**：Squirrel.Mac 要求有效 Developer ID 签名并公证；当前 ad-hoc 构建可以检查/下载更新，但安装会被签名校验拒绝。Windows NSIS 自动更新不受此限制。
+- **macOS 自动更新的限制**：Squirrel.Mac 要求有效 Developer ID 签名并公证；当前 ad-hoc 构建可以检查/下载更新，但安装会被签名校验拒绝。Windows NSIS 自动更新不受此限制。Linux AppImage 支持自动更新；deb 安装通过系统包管理器更新。
 
 ## 0. 前置检查
 
@@ -97,7 +97,7 @@ gh run watch <run-id> --exit-status
 Job 顺序：
 
 - `build`：`Web (static)` → `Deploy Pages`
-- `release`：`Web (static)` → `desktop / Desktop (macos-latest)` 与 `Desktop (windows-latest)` → `Publish release assets`
+- `release`：`Web (static)` → `desktop / Desktop (macos-latest)`、`Desktop (ubuntu-latest)` 与 `Desktop (windows-latest)` → `Publish release assets`
 
 `gh` 偶发网络 EOF，可用带重试的轮询：
 
@@ -131,7 +131,7 @@ gh release view vX.Y.Z --json tagName,isDraft,isPrerelease,publishedAt,assets \
   -q '.tagName, .isDraft, .isPrerelease, .publishedAt, (.assets[].name)'
 ```
 
-- `publish` job 会自动生成 Release 说明：`Download` 表格（macOS `.pkg` arm64/x64、Windows `.exe`）+ `What's Changed`（feat/fix/perf 提交）+ `Full Changelog` 链接。
+- `publish` job 会自动生成 Release 说明：`Download` 表格（macOS `.pkg` arm64/x64、Windows `.exe`、Linux `.AppImage` / `.deb`）+ `What's Changed`（feat/fix/perf 提交）+ `Full Changelog` 链接。
 - 如需更新已有 Release 的说明：`gh release edit vX.Y.Z --notes-file <file>`。
 
 预期资产（以 `X.Y.Z` 为例）：
@@ -140,7 +140,8 @@ gh release view vX.Y.Z --json tagName,isDraft,isPrerelease,publishedAt,assets \
 - macOS：`CopyCraft-X.Y.Z-mac-arm64.pkg`、`CopyCraft-X.Y.Z-mac-x64.pkg`
 - macOS：`CopyCraft-X.Y.Z-mac-arm64.zip`、`CopyCraft-X.Y.Z-mac-x64.zip`
 - Windows：`CopyCraft-Setup-X.Y.Z-x64.exe`、`CopyCraft-Portable-X.Y.Z-x64.exe`
-- 自动更新元数据：`latest.yml`（Windows）、`latest-mac.yml`（macOS）
+- Linux：`CopyCraft-X.Y.Z-linux-x86_64.AppImage`、`CopyCraft-X.Y.Z-linux-amd64.deb`
+- 自动更新元数据：`latest.yml`（Windows）、`latest-mac.yml`（macOS）、`latest-linux.yml`（Linux）
 - 如生成的 `*.blockmap` 文件
 
 确认更新元数据已上传：
@@ -180,7 +181,7 @@ gh api repos/niyongsheng/CopyCraft/pages  # Source 应为 GitHub Actions，cname
 
 - macOS 手动安装目前使用 ad-hoc 签名（`electron-builder.yml` 中 `mac.identity: "-"`）；**自动更新安装**需要 Developer ID 证书 + notarization。
 - 若将来要消除 Gatekeeper 的「无法验证开发者」提示并启用 macOS 自动更新，需要配置 Developer ID 证书 + notarization，并相应修改 `electron-builder.yml` 与 CI secrets。
-- 自动更新依赖 Release 中的 `latest.yml` / `latest-mac.yml`；`release.yml` 的 artifact-path 使用 `release/latest*.yml`（避免把 `builder-debug.yml` 也上传）。
+- 自动更新依赖 Release 中的 `latest.yml` / `latest-mac.yml` / `latest-linux.yml`；`release.yml` 的 artifact-path 使用 `release/latest*.yml`（避免把 `builder-debug.yml` 也上传）。
 
 ## 10. 快速清单
 

@@ -87,3 +87,19 @@ nsis:
 
 portable:
   artifactName: CopyCraft-Portable-${version}-${arch}.${ext}
+
+linux:
+  icon: build/icon.png
+  category: Education
+  maintainer: CopyCraft <niyongsheng@Outlook.com>
+  executableName: copycraft
+  syncDesktopName: true
+  synopsis: Copybook worksheet generator
+  description: CopyCraft 字帖工坊 — 支持汉字、拼音、英文、数学等多种字帖，可导出 PDF/Word。
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64

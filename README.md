@@ -10,7 +10,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.3.1-105FFF?style=flat-square" alt="version" />
-  <img src="https://img.shields.io/badge/Web%20%7C%20macOS%20%7C%20Windows-39FF14?style=flat-square&amp;labelColor=10141D" alt="platforms" />
+  <img src="https://img.shields.io/badge/Web%20%7C%20macOS%20%7C%20Windows%20%7C%20Linux-39FF14?style=flat-square&amp;labelColor=10141D" alt="platforms" />
   <img src="https://img.shields.io/badge/license-MIT-105FFF?style=flat-square" alt="license" />
 </p>
 
@@ -20,7 +20,7 @@
   <a href="https://pan.baidu.com/s/13Fdi5URwlZdvJKHMmYfZIg?pwd=58f7">网盘</a>
 </p>
 
-<p align="center">面向小朋友练字、学校教学与家庭练习的字帖生成器，支持 <strong>Web / macOS / Windows</strong>，内容全部在本地生成。</p>
+<p align="center">面向小朋友练字、学校教学与家庭练习的字帖生成器，支持 <strong>Web / macOS / Windows / Linux</strong>，内容全部在本地生成。</p>
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/9242b247-f713-4985-9f77-98c886632750" alt="CopyCraft 界面演示" width="880" />
@@ -47,6 +47,7 @@ npm run build:web    # 静态站点，输出 dist/
 npm run dist:mac     # macOS dmg / pkg / zip
 npm run dist:win     # Windows NSIS / portable
 npm run dist:win:zip # Windows 免安装 zip
+npm run dist:linux   # Linux AppImage / deb
 npm run pack:desktop # 未打包的 .app / win-unpacked
 ```
 
@@ -63,6 +64,11 @@ npm run pack:desktop # 未打包的 .app / win-unpacked
   ```bash
   xattr -dr com.apple.quarantine "/Applications/CopyCraft.app"
   ```
+
+**Linux 怎么安装？**
+
+- AppImage：`chmod +x CopyCraft-*.AppImage` 后直接运行。
+- deb：`sudo apt install ./CopyCraft-*.deb`。
 
 ## 联系我
 

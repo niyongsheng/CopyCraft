@@ -43,7 +43,10 @@ let mainWindow = null;
 let exportInProgress = false;
 let licenseManager = null;
 
-const autoUpdateEnabled = app.isPackaged && !DEV_URL;
+const autoUpdateEnabled =
+  app.isPackaged &&
+  !DEV_URL &&
+  (process.platform !== 'linux' || Boolean(process.env.APPIMAGE));
 let updateStatus = { phase: 'idle' };
 let pendingUpdateVersion = null;
 
