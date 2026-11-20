@@ -24,6 +24,7 @@
 - **笔顺示范**：姓名逐笔推进，支持笔画完毕截断与不重复生成。
 - **双格式导出**：PDF 打印/下载，Word 按高清 A4 页面图片嵌入。
 - **完整定制**：字体、字号、行距、边距、八种格子、颜色与标题，设置自动记忆。
+- **多语言界面**：简体中文、繁體中文、English、日本語、한국어，可在设置中即时切换，桌面端原生菜单同步更新。
 
 ## 开发与构建
 
@@ -33,11 +34,25 @@ npm run dev          # Web: http://localhost:5178
 npm run dev:desktop  # Electron + Vite HMR
 npm run test:license # 激活 / 试用单元测试
 npm run build:web    # 静态站点，输出 dist/
-npm run dist:mac     # macOS dmg / zip
+npm run dist:mac     # macOS dmg / pkg / zip
 npm run dist:win     # Windows NSIS / portable
 npm run dist:win:zip # Windows 免安装 zip
 npm run pack:desktop # 未打包的 .app / win-unpacked
 ```
+
+## 常见问题
+
+**macOS 提示「已损坏，无法打开」？**
+
+桌面端为 ad-hoc 签名的未公证构建，下载后会被 Gatekeeper 隔离，并非文件损坏。
+
+- 推荐下载 `.pkg`：安装脚本会自动清除隔离标记，装完即可打开。
+- 打开 `.pkg` 被拦截时，右键 →「打开」，或到「系统设置 → 隐私与安全性」点「仍要打开」。
+- 使用 `.dmg` 时，把应用拖入「应用程序」后执行：
+
+  ```bash
+  xattr -dr com.apple.quarantine "/Applications/Copycraft 字帖工坊.app"
+  ```
 
 ## 联系我
 
