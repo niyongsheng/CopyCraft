@@ -31,7 +31,7 @@
 - **24 worksheet types**: names, Chinese characters, characters & words, pinyin dictation, classical poems, paragraphs, pinyin, stroke order, English letters, English words, pen control, numbers, arithmetic, vertical calculation, mixed operations, abacus mental math, blank practice paper, learning clock, and stroke order lookup.
 - **Template library**: built-in textbook sync, structure rules, radicals, character & word, and workbook templates, with `?preset=` share links.
 - **Workbook mode**: combine multiple worksheets (structure → characters → words → paragraphs) into one book and export every page at once.
-- **Stroke order demo**: step through each stroke of a name, with options to stop after the last stroke and avoid repeated characters.
+- **Stroke order demo**: step through each stroke of a name, with options to avoid repeated characters and put one character per row.
 - **Dual-format export**: PDF for printing or downloading; Word with high-resolution A4 page images embedded.
 - **Full customization**: font, size, line spacing, margins, eight grid styles, colors, and titles. Settings are remembered automatically.
 - **Multilingual UI**: Simplified Chinese, Traditional Chinese, English, Japanese, and Korean, switchable instantly in Settings. Native desktop menus update as well.

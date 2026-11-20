@@ -210,10 +210,10 @@ const ja: Record<I18nKey, string> = {
 
   'ctl.nameStrokeOrder': '筆順ごとに表示',
   'ctl.nameStrokeOrderHint': '名前を1画ずつ進む見本マスに分割します',
-  'ctl.nameTruncate': '最終画で切り詰める',
-  'ctl.nameTruncateHint': '最後の画を書いた後、行の残りを埋めません',
   'ctl.nameNoRepeat': '繰り返さない',
-  'ctl.nameNoRepeatHint': '各名前を1回だけ表示し、行全体を埋めません',
+  'ctl.nameNoRepeatHint': '各名前を1回だけ表示し、行末を繰り返しで埋めません',
+  'ctl.nameOneCharPerRow': '1文字1行',
+  'ctl.nameOneCharPerRowHint': '各文字を1行ずつ表示し、自動的に折り返します',
   'ctl.nameStrokeNote': '初回の有効化時は筆順データをネットワークから読み込みます。読み込み後に見本が表示されます。',
   'ctl.clockMode': 'モード',
   'ctl.clockFace': '文字盤',

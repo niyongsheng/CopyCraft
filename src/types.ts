@@ -76,8 +76,8 @@ export interface SheetSettings {
   titleHeight: number;
   /* name sheet */
   nameStrokeOrder: boolean;
-  nameTruncateAfterStrokes: boolean;
   nameNoRepeat: boolean;
+  nameOneCharPerRow: boolean;
   /* math */
   mathOperation: 'add' | 'sub' | 'both';
   mathRange: number;

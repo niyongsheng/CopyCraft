@@ -211,10 +211,10 @@ const zhCN = {
 
   'ctl.nameStrokeOrder': '按笔顺显示',
   'ctl.nameStrokeOrderHint': '把姓名拆成逐笔推进的示范格',
-  'ctl.nameTruncate': '笔画完毕截断',
-  'ctl.nameTruncateHint': '写完最后一笔后，行尾不再填充整字',
   'ctl.nameNoRepeat': '不重复生成',
-  'ctl.nameNoRepeatHint': '每个名字只出现一遍，不重复铺满整行',
+  'ctl.nameNoRepeatHint': '每个名字只出现一遍，行尾不再重复补字',
+  'ctl.nameOneCharPerRow': '一字一行',
+  'ctl.nameOneCharPerRowHint': '每个字单独占一行，自动换行',
   'ctl.nameStrokeNote': '首次开启需联网加载笔顺数据，加载后自动显示示范。',
   'ctl.clockMode': '模式',
   'ctl.clockFace': '表盘',

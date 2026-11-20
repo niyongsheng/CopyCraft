@@ -210,10 +210,10 @@ const zhTW: Record<I18nKey, string> = {
 
   'ctl.nameStrokeOrder': '按筆順顯示',
   'ctl.nameStrokeOrderHint': '把姓名拆成逐筆推進的示範格',
-  'ctl.nameTruncate': '筆畫完畢截斷',
-  'ctl.nameTruncateHint': '寫完最後一筆後，行尾不再填滿整字',
   'ctl.nameNoRepeat': '不重複產生',
-  'ctl.nameNoRepeatHint': '每個名字只出現一遍，不重複鋪滿整行',
+  'ctl.nameNoRepeatHint': '每個名字只出現一遍，行尾不再重複補字',
+  'ctl.nameOneCharPerRow': '一字一行',
+  'ctl.nameOneCharPerRowHint': '每個字單獨佔一行，自動換行',
   'ctl.nameStrokeNote': '首次開啟需連網載入筆順資料，載入後自動顯示示範。',
   'ctl.clockMode': '模式',
   'ctl.clockFace': '鐘面',

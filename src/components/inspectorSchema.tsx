@@ -208,16 +208,15 @@ const NAME_CARD: CardDef = {
     },
     {
       kind: 'toggle',
-      key: 'nameTruncateAfterStrokes',
-      label: 'ctl.nameTruncate',
-      hint: 'ctl.nameTruncateHint',
-      disabled: ({ settings }) => !settings.nameStrokeOrder,
-    },
-    {
-      kind: 'toggle',
       key: 'nameNoRepeat',
       label: 'ctl.nameNoRepeat',
       hint: 'ctl.nameNoRepeatHint',
+    },
+    {
+      kind: 'toggle',
+      key: 'nameOneCharPerRow',
+      label: 'ctl.nameOneCharPerRow',
+      hint: 'ctl.nameOneCharPerRowHint',
     },
     {
       kind: 'note',

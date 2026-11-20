@@ -210,10 +210,10 @@ const en: Record<I18nKey, string> = {
 
   'ctl.nameStrokeOrder': 'Show stroke by stroke',
   'ctl.nameStrokeOrderHint': 'Split the name into cells that advance one stroke at a time',
-  'ctl.nameTruncate': 'Truncate after the last stroke',
-  'ctl.nameTruncateHint': 'Stop filling the rest of the row after the final stroke',
   'ctl.nameNoRepeat': 'No repetition',
-  'ctl.nameNoRepeatHint': 'Show each name once instead of filling the whole row',
+  'ctl.nameNoRepeatHint': 'Show each name once and stop filling the rest of the row',
+  'ctl.nameOneCharPerRow': 'One character per row',
+  'ctl.nameOneCharPerRowHint': 'Put each character on its own row and wrap automatically',
   'ctl.nameStrokeNote': 'Enabling this loads stroke data from the network the first time; the demo appears once loaded.',
   'ctl.clockMode': 'Mode',
   'ctl.clockFace': 'Dial',

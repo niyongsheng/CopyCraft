@@ -351,6 +351,20 @@ function buildGridModel(
       const tokens = Array.from(line).filter((t) => t !== ' ' && t !== '\t');
       if (tokens.length === 0) continue;
 
+      if (type === 'name' && settings.nameOneCharPerRow) {
+        for (const token of tokens) {
+          const fill = settings.nameNoRepeat ? 1 : cols;
+          const cells: CellModel[] = Array.from({ length: fill }, (_, index) => ({
+            text: token,
+            pinyin: showPinyin ? pinyinOf(token) : '',
+            model: index === 0,
+          }));
+          while (cells.length < cols) cells.push({ text: '', pinyin: '', model: false });
+          rows.push({ cells });
+        }
+        continue;
+      }
+
       if (type === 'name' && settings.nameNoRepeat) {
         const tokenCells: CellModel[] = tokens.map((token) => ({
           text: token,
@@ -490,6 +504,25 @@ function emptyNameCell(): NameStrokeCell {
   return { kind: 'empty', char: '', stage: 0, label: '' };
 }
 
+/** One character's stroke-by-stroke demo sequence. */
+function nameStrokeSequence(
+  token: string,
+  strokeData: Record<string, CharData>,
+): NameStrokeCell[] {
+  const data = isHan(token) ? strokeData[token] : undefined;
+  if (!data || data.strokes.length === 0) {
+    return [{ kind: 'stage', char: token, stage: 0, label: '' }];
+  }
+  const total = data.strokes.length;
+  const py = pinyinOf(token);
+  return Array.from({ length: total }, (_, index) => ({
+    kind: 'stage',
+    char: token,
+    stage: index + 1,
+    label: index === 0 ? py : `${index + 1}/${total}`,
+  }));
+}
+
 function blankNameStrokeRow(cols: number): NameStrokeRow {
   return { cells: Array.from({ length: cols }, () => emptyNameCell()) };
 }
@@ -504,7 +537,7 @@ function buildNameStrokeModel(
     settings,
     showPinyin,
   );
-  const fillTrailing = !settings.nameTruncateAfterStrokes && !settings.nameNoRepeat;
+  const fillTrailing = !settings.nameNoRepeat;
 
   const lines = content
     .split('\n')
@@ -516,24 +549,31 @@ function buildNameStrokeModel(
     const tokens = Array.from(line).filter((t) => t !== ' ' && t !== '\t');
     if (tokens.length === 0) continue;
 
-    const sequence: NameStrokeCell[] = [];
-    for (const token of tokens) {
-      const data = isHan(token) ? strokeData[token] : undefined;
-      if (data && data.strokes.length > 0) {
-        const total = data.strokes.length;
-        const py = pinyinOf(token);
-        for (let stage = 1; stage <= total; stage += 1) {
-          sequence.push({
-            kind: 'stage',
-            char: token,
-            stage,
-            label: stage === 1 ? py : `${stage}/${total}`,
-          });
+    if (settings.nameOneCharPerRow) {
+      for (const token of tokens) {
+        const sequence = nameStrokeSequence(token, strokeData);
+        for (let start = 0; start < sequence.length; start += cols) {
+          const cells = sequence.slice(start, start + cols);
+          const isLastChunk = start + cols >= sequence.length;
+          while (cells.length < cols) {
+            if (isLastChunk && fillTrailing) {
+              cells.push({
+                kind: 'repeat',
+                char: token,
+                stage: 0,
+                label: showPinyin ? pinyinOf(token) : '',
+              });
+            } else {
+              cells.push(emptyNameCell());
+            }
+          }
+          rows.push({ cells });
         }
-      } else {
-        sequence.push({ kind: 'stage', char: token, stage: 0, label: '' });
       }
+      continue;
     }
+
+    const sequence = tokens.flatMap((token) => nameStrokeSequence(token, strokeData));
 
     for (let start = 0; start < sequence.length; start += cols) {
       const cells = sequence.slice(start, start + cols);

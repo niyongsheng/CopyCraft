@@ -210,10 +210,10 @@ const ko: Record<I18nKey, string> = {
 
   'ctl.nameStrokeOrder': '필순대로 표시',
   'ctl.nameStrokeOrderHint': '이름을 한 획씩 진행하는 시범 칸으로 나눕니다',
-  'ctl.nameTruncate': '마지막 획에서 자르기',
-  'ctl.nameTruncateHint': '마지막 획을 쓴 뒤 줄 끝을 채우지 않습니다',
   'ctl.nameNoRepeat': '반복하지 않기',
-  'ctl.nameNoRepeatHint': '각 이름을 한 번만 표시하고 줄 전체를 채우지 않습니다',
+  'ctl.nameNoRepeatHint': '각 이름을 한 번만 표시하고 줄 끝을 반복해서 채우지 않습니다',
+  'ctl.nameOneCharPerRow': '한 글자 한 줄',
+  'ctl.nameOneCharPerRowHint': '각 글자를 한 줄씩 표시하며 자동으로 줄바꿈합니다',
   'ctl.nameStrokeNote': '처음 켜면 필순 데이터를 네트워크에서 불러옵니다. 불러오면 시범이 표시됩니다.',
   'ctl.clockMode': '모드',
   'ctl.clockFace': '시계판',
